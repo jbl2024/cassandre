@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import Qdrant
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredFileLoader
@@ -15,21 +16,6 @@ class Command(BaseCommand):
         parser.add_argument('--persist_directory', type=str, default='chroma_db', help='The directory to persist the Chroma vector database')
 
     def handle(self, *args, **options):
-        persist_directory = options['persist_directory']
-        # Create persist_directory if it doesn't exist
-        if not os.path.exists(persist_directory):
-            os.makedirs(persist_directory)
-        # Delete all files inside persist_directory if it exists
-        else:
-            for filename in os.listdir(persist_directory):
-                file_path = os.path.join(persist_directory, filename)
-                try:
-                    if os.path.isfile(file_path) or os.path.islink(file_path):
-                        os.unlink(file_path)
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f'Failed to delete {file_path}. Reason: {str(e)}'))
 
         documents = Document.objects.all()
 
@@ -46,5 +32,12 @@ class Command(BaseCommand):
         embeddings = OpenAIEmbeddings()
         # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         # embeddings = HuggingFaceEmbeddings(model_name="Cedille/fr-boris")
-        Chroma.from_documents(texts, embeddings, persist_directory=persist_directory)
+        url = settings.QDRANT_URL
+        Qdrant.from_documents(
+            documents=docs,
+            embedding=embeddings,
+            url=url,
+            prefer_grpc=True,
+            collection_name="documents"
+        )        
 
