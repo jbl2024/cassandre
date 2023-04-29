@@ -8,14 +8,14 @@
     <button type="submit">Submit</button>
   </form>
   <hr>
-  <h3>Results:</h3>
+  <h3>Réponse:</h3>
+  <code>{{ results.result }}</code>
+
   <ul>
-    <li>
-      <strong>Answer:</strong> {{ results.result }}
-      {% for source in results.source_documents %}
-      <br>
-      <strong>Source:</strong> {{ source }}
-      {% endfor %}
-    </li>
+    {% for source in results.source_documents %}
+      <li>
+        <strong>Source:</strong> {{ source }}
+      </li>
+    {% endfor %}
   </ul>
 {% endblock %}

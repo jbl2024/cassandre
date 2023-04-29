@@ -7,7 +7,7 @@ from langchain.prompts import PromptTemplate
 from langchain.embeddings import HuggingFaceEmbeddings
 
 
-def search_documents(query, persist_directory="chroma_db_st"):
+def search_documents(query, persist_directory="chroma_db"):
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     docsearch = Chroma(
         persist_directory=persist_directory, embedding_function=embeddings
@@ -15,7 +15,7 @@ def search_documents(query, persist_directory="chroma_db_st"):
 
     prompt = PromptTemplate(
         input_variables=["question"],
-        template="Je suis un robot d'aide pour les enseignants qui participent au mouvement inter-académique, je réponds en français. La question est la suivante: {question}?",
+        template="Tu es un un robot d'aide pour les enseignants qui participent au mouvement inter-académique, tu réponds en français. Si tu ne connais pas la réponse, tu n'inventes rien. La question est la suivante: {question}",
     )
 
     qa = RetrievalQA.from_chain_type(
@@ -25,6 +25,6 @@ def search_documents(query, persist_directory="chroma_db_st"):
         return_source_documents=True
     )
 
-    results = qa({"query": prompt.format(question=query)}, return_only_outputs=False)
+    results = qa({"query": prompt.format(question=query)}, return_only_outputs=True)
     print(results)
     return results
