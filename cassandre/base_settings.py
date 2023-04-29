@@ -73,8 +73,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cassandre.wsgi.application'
 
 
-
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
