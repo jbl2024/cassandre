@@ -34,7 +34,7 @@ class Command(BaseCommand):
         # embeddings = HuggingFaceEmbeddings(model_name="Cedille/fr-boris")
         url = settings.QDRANT_URL
         Qdrant.from_documents(
-            documents=docs,
+            documents=texts,
             embedding=embeddings,
             url=url,
             prefer_grpc=True,
