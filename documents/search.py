@@ -6,9 +6,10 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.embeddings import HuggingFaceEmbeddings
 
-
 def search_documents(query, persist_directory="chroma_db"):
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = OpenAIEmbeddings()
+    # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    # embeddings = HuggingFaceEmbeddings(model_name="Cedille/fr-boris")
     docsearch = Chroma(
         persist_directory=persist_directory, embedding_function=embeddings
     )
@@ -22,7 +23,8 @@ def search_documents(query, persist_directory="chroma_db"):
         llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"),
         chain_type="stuff",
         retriever=docsearch.as_retriever(),
-        return_source_documents=True
+        return_source_documents=True,
+        verbose=True
     )
 
     results = qa({"query": prompt.format(question=query)}, return_only_outputs=True)

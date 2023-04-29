@@ -43,6 +43,8 @@ class Command(BaseCommand):
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
         texts = text_splitter.split_documents(docs)
 
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        embeddings = OpenAIEmbeddings()
+        # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        # embeddings = HuggingFaceEmbeddings(model_name="Cedille/fr-boris")
         Chroma.from_documents(texts, embeddings, persist_directory=persist_directory)
 
