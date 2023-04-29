@@ -11,9 +11,11 @@
   <h3>Results:</h3>
   <ul>
     <li>
-      <strong>Answer:</strong> {{ results.answer }}
+      <strong>Answer:</strong> {{ results.result }}
+      {% for source in results.source_documents %}
       <br>
-      <strong>Source:</strong> {{ results.sources }}
+      <strong>Source:</strong> {{ source }}
+      {% endfor %}
     </li>
   </ul>
 {% endblock %}
