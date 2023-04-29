@@ -2,3 +2,4 @@
 -r base.txt
 
 psycopg==3.1.8
+gunicorn==20.1.0
