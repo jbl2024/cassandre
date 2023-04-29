@@ -1,0 +1,4 @@
+# requirements/prod.txt
+-r base.txt
+
+psycopg==3.1.8

@@ -1,0 +1,2 @@
+# requirements/base.txt
+Django==4.2

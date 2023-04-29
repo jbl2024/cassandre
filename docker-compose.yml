@@ -1,0 +1,35 @@
+---
+  version: '3'
+  services:
+    db:
+      image: postgres:14
+      ports: 
+        - "5432:5432"
+      environment: 
+        - POSTGRES_PASSWORD=postgres
+      volumes:
+          - db-data:/var/lib/postgresql/data
+      #command: ["postgres", "-c", "log_statement=all"]
+    adminer:
+      image: adminer
+      depends_on:
+        - db
+      environment:
+        ADMINER_DEFAULT_SERVER: db
+        ADMINER_DEFAULT_DB_DRIVER: pgsql
+        ADMINER_DEFAULT_DB_HOST: db
+        ADMINER_DESIGN: nette
+        ADMINER_PLUGINS: tables-filter tinymce
+      ports:
+        - "9000:8080"    
+    maildev:
+      image: mailhog/mailhog
+      environment:
+        - MAILDEV_INCOMING_USER=caliste
+        - MAILDEV_INCOMING_PASS=password
+      ports:
+        - "1080:8025"
+        - "1025:1025"        
+  volumes:
+    db-data:
+  
