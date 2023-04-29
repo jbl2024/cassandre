@@ -24,9 +24,6 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 # Copy the Django project files
 COPY . /app/
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
 # Set up Nginx
 FROM nginx:1.21-alpine
 
