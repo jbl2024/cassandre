@@ -17,3 +17,5 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
+QDRANT_URL = "http://localhost:6333"
