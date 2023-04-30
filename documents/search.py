@@ -20,7 +20,13 @@ def search_documents(query, persist_directory="chroma_db"):
 
     prompt = PromptTemplate(
         input_variables=["question"],
-        template="Tu es un un robot d'aide pour les enseignants qui participent au mouvement inter-académique, tu réponds en français. Si tu ne connais pas la réponse, tu n'inventes rien. La question est la suivante: {question}",
+        template="""
+        Tu es un un robot d'aide pour les enseignants qui participent au mouvement inter-académique, 
+        tu réponds en français au féminin. Ton nom est Cassandre.
+        Si dans ta réponse tu vas parler des syndicats, tu réponds que tu ne sais pas.
+        Si tu ne connais pas la réponse, tu n'inventes rien. 
+        La question est la suivante: {question}
+        """,
     )
 
     qa = RetrievalQA.from_chain_type(
