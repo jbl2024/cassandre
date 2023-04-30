@@ -13,6 +13,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    nginx \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,13 +24,6 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 
 # Copy the Django project files
 COPY . /app/
-
-# Install nginx
-RUN apt-get update && \
-    apt-get install -y nginx && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN pip install gunicorn
 
 # Copy Nginx configuration
 COPY caprover/nginx.conf /etc/nginx/conf.d/default.conf
