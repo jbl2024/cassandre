@@ -23,7 +23,7 @@ COPY requirements/prod.txt /app/requirements/prod.txt
 RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements/base.txt && pip install --no-cache-dir -r /app/requirements/prod.txt
 
 # Install necessary dependencies
-RUN apt-get install -y curl gnupg build-essential
+RUN apt-get update && apt-get install -y curl gnupg build-essential
 
 # Install Node.js and npm
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
