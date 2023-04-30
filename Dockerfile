@@ -36,15 +36,7 @@ RUN apt-get install -y nodejs
 COPY . /app/
 
 # Build tailwind
-RUN npm install -g \
-    rimraf \
-    cross-env \
-    tailwindcss \
-    postcss \
-    postcss-import \
-    autoprefixer \
-    vite
-
+RUN cd /app/theme && npm install
 RUN python manage.py tailwind build
 
 # Collect static files
