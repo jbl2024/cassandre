@@ -4,6 +4,7 @@ FROM python:3.9-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV DJANGO_SETTINGS_MODULE cassandre.prod_settings
 
 # Create and set the working directory
 RUN mkdir /app
@@ -31,6 +32,13 @@ RUN apt-get install -y nodejs
 
 # Copy the Django project files
 COPY . /app/
+
+# Build tailwind
+RUN python manage.py tailwind build
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
 
 # Copy Nginx configuration
 COPY caprover/nginx.conf /etc/nginx/conf.d/default.conf

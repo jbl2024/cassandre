@@ -12,12 +12,6 @@ python manage.py migrate
 # Create superuser if it does not exist
 python manage.py create_superuser
 
-# Build tailwind
-python manage.py tailwind build
-
-# Collect static files
-python manage.py collectstatic --noinput
-
 # Start Gunicorn
 gunicorn cassandre.wsgi:application \
     --bind 0.0.0.0:8000 \
