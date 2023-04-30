@@ -12,6 +12,9 @@ python manage.py migrate
 # Create superuser if it does not exist
 python manage.py create_superuser
 
+# Start Celery worker in the background
+celery -A cassandre worker --loglevel=info &
+
 # Start Gunicorn
 gunicorn cassandre.wsgi:application \
     --bind 0.0.0.0:8000 \

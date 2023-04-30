@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Document
-from django.core.management import call_command
+from documents.tasks import index_documents
+from documents.models import Document
 
 def index_documents_action(modeladmin, request, queryset):
-    call_command('index_documents')
-    modeladmin.message_user(request, 'Documents have been indexed successfully')
+    index_documents.delay()
+    modeladmin.message_user(request, 'Documents indexing has started, please wait for completion')
 index_documents_action.short_description = 'Index selected documents'
 
 @admin.register(Document)

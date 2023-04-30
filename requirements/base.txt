@@ -8,3 +8,6 @@ tiktoken==0.3.3
 django-storages==1.13.2
 boto3==1.26.123
 django-tailwind==3.5.0
+celery==5.2.7
+redis==4.5.4
+kombu==5.2.4

@@ -25,3 +25,5 @@ SESSION_COOKIE_SECURE = True
 
 MEDIA_ROOT = '/media'
 MEDIA_URL = '/media/'
+
+CELERY_BROKER_URL= os.environ.get('CELERY_BROKER_URL')

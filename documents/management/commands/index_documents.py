@@ -48,4 +48,5 @@ class Command(BaseCommand):
             prefer_grpc=True,
             collection_name="documents"
         )        
+        self.stdout.write(self.style.SUCCESS(f'Successfully indexed documents'))
 

@@ -135,3 +135,12 @@ TAILWIND_APP_NAME = 'theme'
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+
+# Use the Redis broker
+CELERY_BROKER_URL = 'redis://localhost:6379'
+
+# Use the JSON serializer
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'

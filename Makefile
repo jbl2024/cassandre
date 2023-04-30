@@ -9,6 +9,11 @@ runtailwind_dev:
 		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
 		python manage.py tailwind start
 
+run_celery:
+		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
+		export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES; \
+		celery -A cassandre worker --loglevel=info
+
 migrate_dev:
 		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
 		python manage.py migrate

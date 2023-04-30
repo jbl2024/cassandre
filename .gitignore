@@ -268,4 +268,6 @@ chroma_db
 chroma_db_st
 
 run_local.sh
+run_celery.sh
 reindex.sh
+
