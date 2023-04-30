@@ -41,6 +41,7 @@ RUN npm install -g \
     cross-env \
     tailwindcss \
     postcss \
+    postcss-import \
     autoprefixer \
     vite
 
