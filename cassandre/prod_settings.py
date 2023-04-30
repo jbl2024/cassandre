@@ -1,11 +1,11 @@
 from .base_settings import *
 
-DEBUG = True
+DEBUG = False
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-ALLOWED_HOSTS = ['cassandre.services.jbl2024.com']
-CSRF_TRUSTED_ORIGINS = ['https://cassandre.services.jbl2024.com']
+ALLOWED_HOSTS = ['cassandre.services2.jbl2024.com']
+CSRF_TRUSTED_ORIGINS = ['https://cassandre.services2.jbl2024.com']
 
 DATABASES = {
     'default': {

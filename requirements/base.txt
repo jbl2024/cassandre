@@ -7,3 +7,4 @@ openai==0.27.5
 tiktoken==0.3.3
 django-storages==1.13.2
 boto3==1.26.123
+django-tailwind==3.5.0

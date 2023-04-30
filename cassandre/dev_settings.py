@@ -19,3 +19,6 @@ DATABASES = {
 }
 
 QDRANT_URL = "http://localhost:6333"
+
+INSTALLED_APPS.append('django_browser_reload')
+MIDDLEWARE.append('django_browser_reload.middleware.BrowserReloadMiddleware')
