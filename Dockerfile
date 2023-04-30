@@ -34,9 +34,6 @@ COPY caprover/entrypoint.sh /entrypoint.sh
 # Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
 
-# Create dedicated media folder
-RUN mkdir /media && chown -R www-data:www-data /media
-
 # Expose the Nginx service port
 EXPOSE 80
 
