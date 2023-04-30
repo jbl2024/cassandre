@@ -3,6 +3,9 @@
 # Change to the app directory
 cd /app
 
+# Start Nginx in the background
+nginx -g "daemon on;"
+
 # Run migrations
 python manage.py migrate
 
