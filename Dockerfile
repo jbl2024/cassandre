@@ -36,7 +36,7 @@ RUN apt-get install -y nodejs
 COPY . /app/
 
 # Build tailwind
-RUN cd /app/theme && npm install
+RUN python manage.py tailwind install
 RUN python manage.py tailwind build
 
 # Collect static files
