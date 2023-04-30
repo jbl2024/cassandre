@@ -86,6 +86,8 @@
 </div>
 
 <script>
+  const history = [];
+
   const searchForm = document.getElementById("search-form");
   const resultsResult = document.getElementById("results-result");
   const resultsSourceDocuments = document.getElementById(
@@ -105,6 +107,10 @@
     }
 
     const query = formData.get("query");
+
+    // Add history to the form data before submitting
+    formData.set("history", history.join("\n"));
+
     const response = await fetch("", {
       method: "POST",
       body: formData,
@@ -201,6 +207,16 @@
 
     resultsDiv.appendChild(div);
     scrollToBottom();
+
+
+    // Save the previous question and answer
+    const previousQuestion = `question précédente: ${query ? query : ""}`;
+    const previousAnswer = `réponse précédente: ${results.result}`;
+    history.push(previousQuestion, previousAnswer);
+    while (history.length > 20) {
+      history.splice(0, 2); // Remove the oldest question and answer pair
+    }
+
     // resultsSourceDocuments.innerHTML = "";
     // for (const source of sourceDocuments) {
     //   const li = document.createElement("li");

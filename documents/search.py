@@ -8,7 +8,7 @@ from langchain.prompts import PromptTemplate
 from datetime import datetime
 import qdrant_client
 
-def search_documents(query, engine="gpt-3.5-turbo"):
+def search_documents(query, history, engine="gpt-3.5-turbo"):
     embeddings = OpenAIEmbeddings()
     url = settings.QDRANT_URL
     client = qdrant_client.QdrantClient(
@@ -25,13 +25,13 @@ def search_documents(query, engine="gpt-3.5-turbo"):
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
     prompt = PromptTemplate(
-        input_variables=["question"],
+        input_variables=["question", "history"],
         template=f"""
         Nous sommes le {formatted_date_time}
-        Tu es un un robot d'aide pour les enseignants qui participent au mouvement inter-académique, 
-        tu réponds en français au féminin. Ton nom est Cassandre.
-        Si dans ta réponse tu vas parler des syndicats, tu réponds que tu ne sais pas.
-        Si tu ne connais pas la réponse, tu n'inventes rien. 
+        Tu es un un robot qui accompagne les gestionnaires qui gèrent le mouvement inter-académique des enseignants. 
+        Tu réponds en français au féminin. Ton nom est Cassandre.
+        Si tu ne connais pas la réponse, tu n'inventes rien et tu suggère de contacter le responsable du mouvement. 
+        L'historique des échanges est le suivant: {{history}}.
         La question est la suivante: {{question}}
         """,
     )
@@ -43,6 +43,6 @@ def search_documents(query, engine="gpt-3.5-turbo"):
         verbose=True
     )
 
-    results = qa({"query": prompt.format(question=query)}, return_only_outputs=True)
+    results = qa({"query": prompt.format(history=history, question=query)}, return_only_outputs=True)
     print(results)
     return results
