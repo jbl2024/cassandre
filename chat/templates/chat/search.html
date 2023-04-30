@@ -98,6 +98,12 @@
     loading.classList.remove("hidden");
     scrollToBottom();
     const formData = new FormData(searchForm);
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const engine = urlSearchParams.get("engine");
+    if (engine) {
+      formData.append("engine", engine);
+    }
+
     const query = formData.get("query");
     const response = await fetch("", {
       method: "POST",
@@ -110,11 +116,6 @@
       const data = await response.json();
       console.log(data);
       updateResults(data, query);
-      window.history.pushState(
-        data.results,
-        "Search results",
-        `?query=${encodeURIComponent(formData.get("query"))}`
-      );
     } else {
       console.error("Error submitting search form:", response.statusText);
     }

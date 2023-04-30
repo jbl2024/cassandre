@@ -7,7 +7,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 import qdrant_client
 
-def search_documents(query, persist_directory="chroma_db"):
+def search_documents(query, engine="gpt-3.5-turbo"):
     embeddings = OpenAIEmbeddings()
     url = settings.QDRANT_URL
     client = qdrant_client.QdrantClient(
@@ -30,7 +30,7 @@ def search_documents(query, persist_directory="chroma_db"):
     )
 
     qa = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"),
+        llm=ChatOpenAI(temperature=0, model_name=engine),
         chain_type="stuff",
         retriever=docsearch.as_retriever(),
         return_source_documents=True,
