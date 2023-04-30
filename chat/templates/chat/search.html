@@ -1,21 +1,142 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block content %}
 
-{% block content %}
-  <h2>Search</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Submit</button>
+<div
+  class="h-full flex flex-col flex-grow w-full max-w-3xl bg-white shadow-xl rounded-lg overflow-hidden"
+>
+  <div class="flex flex-col flex-grow h-0 p-4 overflow-auto">
+    <div id="results">
+      <div class="flex w-full mt-2 space-x-3 max-w-xl">
+        <div class="flex-shrink-0 h-10 w-10">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+            />
+          </svg>
+        </div>
+        <div>
+          <div class="bg-gray-300 p-3 mb-3 rounded-r-lg rounded-bl-lg">
+            <p class="text-sm whitespace-pre-wrap">
+              Recherchez dans les textes liés au mouvement. Attention : les
+              réponses doivent être vérifiées :)
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div></div>
+  </div>
+  <div class="flex-none bg-gray-300">
+    <div class="p-3 bg-gray-300 shadow-xl rounded-lg">
+      <div class="w-full relative">
+        <form
+          id="search-form"
+          method="post"
+          class="flex flex-col space-y-4 mb-8"
+        >
+          {% csrf_token %} {{ form }}
+
+          <button
+            type="submit"
+            class="absolute right-2 bottom-1 h-8 w-8 hover:cursor-pointer rounded-full p-1 bg-blue-500 text-white hover:opacity-80"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="tabler-icon tabler-icon-arrow-up"
+            >
+              <path d="M12 5l0 14"></path>
+              <path d="M18 11l-6 -6"></path>
+              <path d="M6 11l6 -6"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-xl mx-auto">
+  <h2 class="text-2xl font-bold mb-4">Search</h2>
+  <form id="search-form" method="post" class="flex flex-col space-y-4 mb-8">
+    {% csrf_token %} {{ form.as_p }}
+    <button
+      type="submit"
+      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 transition-colors"
+    >
+      Search
+    </button>
   </form>
-  <hr>
-  <h3>Réponse:</h3>
-  <code>{{ results.result }}</code>
+  <hr />
+  <h3 class="text-xl font-bold mb-4">Réponse:</h3>
+  <code id="results-result" class="block mb-8"></code>
+  <ul id="results-source-documents" class="space-y-4"></ul>
+</div>
 
-  <ul>
-    {% for source in results.source_documents %}
-      <li>
-        <strong>Source:</strong> {{ source }}
-      </li>
-    {% endfor %}
-  </ul>
+<script>
+  const searchForm = document.getElementById("search-form");
+  const resultsResult = document.getElementById("results-result");
+  const resultsSourceDocuments = document.getElementById(
+    "results-source-documents"
+  );
+
+  searchForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(searchForm);
+    const response = await fetch("", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      updateResults(data);
+      window.history.pushState(
+        data.results,
+        "Search results",
+        `?query=${encodeURIComponent(formData.get("query"))}`
+      );
+    } else {
+      console.error("Error submitting search form:", response.statusText);
+    }
+  });
+
+  function updateResults(results) {
+    resultsResult.textContent = results.result;
+
+    const sourceDocuments = results.source_documents;
+    resultsSourceDocuments.innerHTML = "";
+    for (const source of sourceDocuments) {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>Source:</strong> ${source.page_content}`;
+      resultsSourceDocuments.appendChild(li);
+    }
+  }
+
+  window.addEventListener("popstate", (event) => {
+    if (event.state) {
+      updateResults(event.state);
+    } else {
+      resultsResult.textContent = "";
+      resultsSourceDocuments.innerHTML = "";
+    }
+  });
+</script>
 {% endblock %}

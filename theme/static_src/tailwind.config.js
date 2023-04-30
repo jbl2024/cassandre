@@ -4,7 +4,7 @@
  * If you need the full config, get it from here:
  * https://unpkg.com/browse/tailwindcss@latest/stubs/defaultConfig.stub.js
  */
-
+const defaultTheme = require('tailwindcss/defaultTheme');
 module.exports = {
     content: [
         /**
@@ -43,6 +43,17 @@ module.exports = {
     ],
     theme: {
         extend: {},
+        fontFamily: {
+            'sans': ['Inter', ...defaultTheme.fontFamily.sans],
+        },
+        minHeight: {
+            '3': '3rem',
+            ...defaultTheme.minHeight
+        },
+        backgroundColor: theme => ({
+            ...theme('colors'),
+            'limegreen': 'limegreen'
+        })
     },
     plugins: [
         /**
