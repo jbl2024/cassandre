@@ -5,6 +5,10 @@ runserver_dev:
 		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
 		python manage.py runserver
 
+runtailwind_dev:
+		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
+		python manage.py tailwind start
+
 migrate_dev:
 		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
 		python manage.py migrate
