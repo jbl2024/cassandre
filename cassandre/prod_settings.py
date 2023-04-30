@@ -20,5 +20,5 @@ DATABASES = {
 
 QDRANT_URL = os.environ.get('QDRANT_URL', 'http://localhost:6334')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
