@@ -29,6 +29,7 @@ class Command(BaseCommand):
                 
                 # Create a temporary file with the same extension
                 with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as temp_file:
+                    self.stdout.write(self.style.SUCCESS(f'Loading: {document.title or document.file}'))
                     temp_file.write(file_content)
                     temp_file.flush()
 
@@ -36,9 +37,13 @@ class Command(BaseCommand):
                     loaded_documents = loader.load()
                     docs.extend(loaded_documents)
                     self.stdout.write(self.style.SUCCESS(f'Successfully loaded document: {document.title or document.file}'))
+        self.stdout.write(self.style.SUCCESS(f'All documents are loaded, splitting data'))
+
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
         texts = text_splitter.split_documents(docs)
+        self.stdout.write(self.style.SUCCESS(f'Splitting data done'))
 
+        self.stdout.write(self.style.SUCCESS(f'Indexing data started'))
         embeddings = OpenAIEmbeddings()
         url = settings.QDRANT_URL
         Qdrant.from_documents(
