@@ -53,5 +53,6 @@ class Command(BaseCommand):
             prefer_grpc=True,
             collection_name="documents"
         )        
+        Qdrant.add_documents
         self.stdout.write(self.style.SUCCESS(f'Successfully indexed documents'))
 
