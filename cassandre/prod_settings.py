@@ -5,7 +5,7 @@ DEBUG = True
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ['cassandre.services.jbl2024.com']
-CSRF_TRUSTED_ORIGINS = ['cassandre.services.jbl2024.com']
+CSRF_TRUSTED_ORIGINS = ['https://cassandre.services.jbl2024.com']
 
 DATABASES = {
     'default': {
