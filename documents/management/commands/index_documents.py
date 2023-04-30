@@ -4,7 +4,6 @@ from langchain.vectorstores import Qdrant
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import HuggingFaceEmbeddings 
 from documents.models import Document
 import os
 import shutil
@@ -30,8 +29,6 @@ class Command(BaseCommand):
         texts = text_splitter.split_documents(docs)
 
         embeddings = OpenAIEmbeddings()
-        # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        # embeddings = HuggingFaceEmbeddings(model_name="Cedille/fr-boris")
         url = settings.QDRANT_URL
         Qdrant.from_documents(
             documents=texts,

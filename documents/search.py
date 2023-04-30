@@ -5,13 +5,10 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.embeddings import HuggingFaceEmbeddings
 import qdrant_client
 
 def search_documents(query, persist_directory="chroma_db"):
     embeddings = OpenAIEmbeddings()
-    # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    # embeddings = HuggingFaceEmbeddings(model_name="Cedille/fr-boris")
     url = settings.QDRANT_URL
     client = qdrant_client.QdrantClient(
         url=url, prefer_grpc=True
