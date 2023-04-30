@@ -2,6 +2,8 @@ from .base_settings import *
 
 DEBUG = False
 
+SECRET_KEY = os.environ["SECRET_KEY"]
+
 ALLOWED_HOSTS = ['cassandre.services.jbl2024.com']
 
 DATABASES = {
@@ -18,3 +20,4 @@ DATABASES = {
 QDRANT_URL = os.environ.get('QDRANT_URL', 'http://localhost:6334')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
