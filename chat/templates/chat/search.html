@@ -3,7 +3,10 @@
 <div
   class="h-full flex flex-col flex-grow w-full max-w-3xl bg-white shadow-xl rounded-lg overflow-hidden"
 >
-  <div class="flex flex-col flex-grow h-0 p-4 overflow-auto">
+  <div
+    class="flex flex-col flex-grow h-0 p-4 overflow-auto"
+    id="results-container"
+  >
     <div id="results">
       <div class="flex w-full mt-2 space-x-3 max-w-xl">
         <div class="flex-shrink-0 h-10 w-10">
@@ -32,7 +35,17 @@
         </div>
       </div>
     </div>
-    <div></div>
+    <div id="loading" class="hidden">
+      <div
+        class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+        role="status"
+      >
+        <span
+          class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]"
+          >Loading...</span>
+      </div>
+      Merci de patienter
+    </div>
   </div>
   <div class="flex-none bg-gray-300">
     <div class="p-3 bg-gray-300 shadow-xl rounded-lg">
@@ -71,23 +84,6 @@
   </div>
 </div>
 
-<div class="max-w-xl mx-auto">
-  <h2 class="text-2xl font-bold mb-4">Search</h2>
-  <form id="search-form" method="post" class="flex flex-col space-y-4 mb-8">
-    {% csrf_token %} {{ form.as_p }}
-    <button
-      type="submit"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 transition-colors"
-    >
-      Search
-    </button>
-  </form>
-  <hr />
-  <h3 class="text-xl font-bold mb-4">Réponse:</h3>
-  <code id="results-result" class="block mb-8"></code>
-  <ul id="results-source-documents" class="space-y-4"></ul>
-</div>
-
 <script>
   const searchForm = document.getElementById("search-form");
   const resultsResult = document.getElementById("results-result");
@@ -97,12 +93,16 @@
 
   searchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-
+    const loading = document.getElementById("loading");
+    loading.classList.remove("hidden");
+    scrollToBottom();
     const formData = new FormData(searchForm);
     const response = await fetch("", {
       method: "POST",
       body: formData,
     });
+
+    loading.classList.add("hidden");
 
     if (response.ok) {
       const data = await response.json();
@@ -118,16 +118,66 @@
     }
   });
 
-  function updateResults(results) {
-    resultsResult.textContent = results.result;
+  function scrollToBottom() {
+    const resultsDiv = document.getElementById("results-container");
+    resultsDiv.scrollTop = resultsDiv.scrollHeight;
+  }
 
+  function updateResults(results) {
     const sourceDocuments = results.source_documents;
-    resultsSourceDocuments.innerHTML = "";
+
+    const resultsDiv = document.querySelector("#results");
+    const div = document.createElement("div");
+    div.classList.add("flex", "w-full", "mt-2", "space-x-3", "max-w-xl");
+
+    const svgDiv = document.createElement("div");
+    svgDiv.classList.add("flex-shrink-0", "h-10", "w-10");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("stroke-width", "1.5");
+    svg.setAttribute("stroke", "currentColor");
+    svg.classList.add("w-6", "h-6");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute(
+      "d",
+      "M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+    );
+    svg.appendChild(path);
+    svgDiv.appendChild(svg);
+    div.appendChild(svgDiv);
+
+    const textDiv = document.createElement("div");
+    const textContainer = document.createElement("div");
+    textContainer.classList.add(
+      "bg-gray-300",
+      "p-3",
+      "mb-3",
+      "rounded-r-lg",
+      "rounded-bl-lg"
+    );
+    const text = document.createElement("p");
+    text.classList.add("text-sm", "whitespace-pre-wrap");
+    let sources = "";
     for (const source of sourceDocuments) {
-      const li = document.createElement("li");
-      li.innerHTML = `<strong>Source:</strong> ${source.page_content}`;
-      resultsSourceDocuments.appendChild(li);
+      sources += `<br><strong>Source:</strong> ${source.page_content}`;
     }
+    text.innerHTML = `${results.result}<br>${sources}`;
+    textContainer.appendChild(text);
+    textDiv.appendChild(textContainer);
+    div.appendChild(textDiv);
+
+    resultsDiv.appendChild(div);
+    scrollToBottom();
+    // resultsSourceDocuments.innerHTML = "";
+    // for (const source of sourceDocuments) {
+    //   const li = document.createElement("li");
+    //   li.innerHTML = `<strong>Source:</strong> ${source.page_content}`;
+    //   resultsSourceDocuments.appendChild(li);
+    // }
   }
 
   window.addEventListener("popstate", (event) => {
