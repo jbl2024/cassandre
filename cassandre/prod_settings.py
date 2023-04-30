@@ -16,3 +16,4 @@ DATABASES = {
 }
 
 QDRANT_URL = os.environ.get('QDRANT_URL', 'http://localhost:6334')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
