@@ -2,7 +2,7 @@ from .base_settings import *
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['your-production-domain.com']
+ALLOWED_HOSTS = ['cassandre.services.jbl2024.com']
 
 DATABASES = {
     'default': {
