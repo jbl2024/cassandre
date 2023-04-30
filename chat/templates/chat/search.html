@@ -98,6 +98,7 @@
     loading.classList.remove("hidden");
     scrollToBottom();
     const formData = new FormData(searchForm);
+    const query = formData.get("query");
     const response = await fetch("", {
       method: "POST",
       body: formData,
@@ -108,7 +109,7 @@
     if (response.ok) {
       const data = await response.json();
       console.log(data);
-      updateResults(data);
+      updateResults(data, query);
       window.history.pushState(
         data.results,
         "Search results",
@@ -124,7 +125,7 @@
     resultsDiv.scrollTop = resultsDiv.scrollHeight;
   }
 
-  function updateResults(results) {
+  function updateResults(results, query) {
     const sourceDocuments = results.source_documents;
 
     const resultsDiv = document.querySelector("#results");
@@ -146,8 +147,7 @@
     queryText.classList.add("text-sm", "whitespace-pre-wrap");
 
     // Get the user's input query
-    const query = new URLSearchParams(window.location.search).get("query");
-    queryText.innerHTML = `Question: ${query}`;
+    queryText.innerHTML = `Question: ${query ? query: ""}`;
     queryTextContainer.appendChild(queryText);
     queryTextDiv.appendChild(queryTextContainer);
     queryDiv.appendChild(queryTextDiv);
