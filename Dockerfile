@@ -1,5 +1,5 @@
 # Use the official Python image as the base image
-FROM python:3.9-slim as build
+FROM python:3.9-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -24,9 +24,6 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 # Copy the Django project files
 COPY . /app/
 
-# Set up Nginx
-FROM python:3.9-slim
-
 # Install nginx
 RUN apt-get update && \
     apt-get install -y nginx && \
@@ -36,9 +33,6 @@ RUN pip install gunicorn
 
 # Copy Nginx configuration
 COPY caprover/nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy the Django project files from the build stage
-COPY --from=build /app/ /app/
 
 # Copy the entrypoint script
 COPY caprover/entrypoint.sh /entrypoint.sh

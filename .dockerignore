@@ -1,0 +1,6 @@
+caprover
+.vscode
+media/documents
+captain-definition
+build_docker.sh
+.drone.yml
