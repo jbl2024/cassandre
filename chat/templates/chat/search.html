@@ -58,27 +58,49 @@
         >
           {% csrf_token %} {{ form }}
 
-          <button
-            type="submit"
-            class="absolute right-2 bottom-1 h-8 w-8 hover:cursor-pointer rounded-full p-1 bg-blue-500 text-white hover:opacity-80"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="tabler-icon tabler-icon-arrow-up"
+          <div class="absolute right-2 bottom-1 flex space-x-2">
+            <button
+              type="submit"
+              class="h-8 w-8 hover:cursor-pointer rounded-full p-1 bg-blue-500 text-white hover:opacity-80"
             >
-              <path d="M12 5l0 14"></path>
-              <path d="M18 11l-6 -6"></path>
-              <path d="M6 11l6 -6"></path>
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="tabler-icon tabler-icon-arrow-up"
+              >
+                <path d="M12 5l0 14"></path>
+                <path d="M18 11l-6 -6"></path>
+                <path d="M6 11l6 -6"></path>
+              </svg>
+            </button>
+            <button
+              id="clear-conversation"
+              type="button"
+              class="h-8 w-8 hover:cursor-pointer rounded-full p-1 bg-red-500 text-white hover:opacity-80"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                />
+              </svg>
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -88,6 +110,18 @@
 <script>
   const history = [];
 
+  const clearConversationBtn = document.getElementById("clear-conversation");
+
+  clearConversationBtn.addEventListener("click", () => {
+    clearConversation();
+  });
+
+  function clearConversation() {
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = "";
+    history.length = 0;
+  }
+  
   const searchForm = document.getElementById("search-form");
   const resultsResult = document.getElementById("results-result");
   const resultsSourceDocuments = document.getElementById(
@@ -154,7 +188,7 @@
     queryText.classList.add("text-sm", "whitespace-pre-wrap");
 
     // Get the user's input query
-    queryText.innerHTML = `Question: ${query ? query: ""}`;
+    queryText.innerHTML = `Question: ${query ? query : ""}`;
     queryTextContainer.appendChild(queryText);
     queryTextDiv.appendChild(queryTextContainer);
     queryDiv.appendChild(queryTextDiv);
@@ -207,7 +241,6 @@
 
     resultsDiv.appendChild(div);
     scrollToBottom();
-
 
     // Save the previous question and answer
     const previousQuestion = `question précédente: ${query ? query : ""}`;
