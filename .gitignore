@@ -271,3 +271,4 @@ run_local.sh
 run_celery.sh
 reindex.sh
 
+.envrc.private

@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Start script 1
-docker-compose up &
+make docker &
 pid1=$!
 sleep 5
 # Start script 2
-./run_local.sh &
+make runserver_dev &
 pid2=$!
 
-./run_celery.sh &
+make run_celery &
 pid3=$!
 
 # Start script 3
