@@ -6,10 +6,12 @@ from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from datetime import datetime
+from documents.embedding import get_embedding
 import qdrant_client
+import locale
 
 def search_documents(query, history, engine="gpt-3.5-turbo"):
-    embeddings = OpenAIEmbeddings()
+    embeddings = get_embedding()
     url = settings.QDRANT_URL
     client = qdrant_client.QdrantClient(
         url=url, prefer_grpc=True
@@ -19,6 +21,7 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
         embedding_function=embeddings.embed_query
     )    
 
+    locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
     now = datetime.now()
 
     # Formater la date et l'heure en français
@@ -28,10 +31,11 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
     context = ""
     for doc in res:
         context = f"{context}\n{doc.page_content}"
+        print(doc)
     prompt = PromptTemplate(
-        input_variables=["question", "context"],
+        input_variables=["question", "context", "date"],
         template=f"""
-        Nous sommes le {formatted_date_time}
+        Nous sommes le {{date}}
         Tu es un un robot qui accompagne les gestionnaires qui gèrent le mouvement inter-académique des enseignants. 
         Tu réponds en français au féminin. Ton nom est Cassandre.
         Tu n'as pas besoin de dire bonjour, ni de préciser que tu es un robot d'accompagnement.
@@ -49,5 +53,11 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
         verbose=True
     )
 
-    results = qa({"query": prompt.format(context=context, question=query)}, return_only_outputs=True)
+    final_prompt = prompt.format(context=context, question=query, date=formatted_date_time)
+    print("#####")
+    print(final_prompt)
+    print("#####")
+    print(len(final_prompt))
+    print("#####")
+    results = qa({"query": prompt.format(context=context, question=query, date=formatted_date_time)}, return_only_outputs=True)
     return results
