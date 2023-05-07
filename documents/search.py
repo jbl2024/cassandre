@@ -18,6 +18,8 @@ logger = logging.getLogger('cassandre')
 
 
 def search_documents(query, history, engine="gpt-3.5-turbo"):
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+
     embeddings = get_embedding()
     url = settings.QDRANT_URL
     client = qdrant_client.QdrantClient(
@@ -28,7 +30,7 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
         embedding_function=embeddings.embed_query
     )    
 
-    res = docsearch.similarity_search(query, k=4)
+    res = docsearch.similarity_search(query, k=8)
     context = ""
     for doc in res:
         cleaned_page_content = re.sub(r'\s+', ' ', doc.page_content.strip())
@@ -41,23 +43,43 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
         return query_openai(query, engine, docsearch, context)
 
 def query_lighton(query, context):
-    prompt_template =  PromptTemplate(
-        input_variables=["question", "context"],
-        template=f"""Tu es Cassandre et tu réponds à la question en utilisant **uniquement** les informations contenues dans le document.
-Si la réponse n'est pas contenue dans le document, tu réponds "Je ne sais pas". 
-Document: {{context}}
-Question: {{question}}
-Réponse: Selon ce document,""",
-    )
-
-    prompt = prompt_template.format(context=context, question=query)
-    logger.debug("### paradigm")
-
     host_ip = os.environ["PARADIGM_HOST"]
     model = RemoteModel(host_ip, model_name="llm-mini")
+
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context", "date"],
+        template=f"""Nous sommes le {{date}}. Tu es Cassandre et tu réponds aux questions en utilisant **uniquement** les informations contenues dans le document.
+Si la réponse n'est pas contenue dans le document, tu réponds "Je ne sais pas". 
+Document: {{context}}
+Questions: {{question}}
+Réponse: En te basant uniquement sur le document, tu peux dire que""")
+
+    prompt = prompt_template.format(context=context, question=query, date=formatted_date_time)
+
+    # Utilisez l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
+    tokenize_response = model.tokenize("Je ne sais pas")
+
+    # Récupérez les ID de tokens à partir de la réponse
+    token_ids = [list(token.values())[0] for token in tokenize_response.tokens]
+
+    # Ajoutez un biais positif pour ces tokens
+    biases = {token_id: 2 for token_id in token_ids}
+
+    logger.debug("### paradigm")
+
     logger.debug(prompt)
     logger.debug(len(prompt))
-    paradigm_result = model.create(prompt, n_tokens=500, temperature=0)
+
+    parameters = {
+        "n_tokens": 500,
+        "temperature": 0,
+        "biases": biases,
+    }
+
+    paradigm_result = model.create(prompt, **parameters)
     if hasattr(paradigm_result, 'completions') and len(paradigm_result.completions) > 0:
         return {'result': paradigm_result.completions[0].output_text}
     else:
@@ -87,5 +109,8 @@ La question est la suivante: {{question}}""",
     )
 
     prompt = prompt_template.format(context=context, question=query, date=formatted_date_time)
+    print("#####")
+    print(prompt)
+    print("#####")
     results = qa({"query": prompt}, return_only_outputs=True)
     return results
