@@ -32,7 +32,7 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
     context = ""
     for doc in res:
         cleaned_page_content = re.sub(r'\s+', ' ', doc.page_content.strip())
-        context = f"{context}\nsource: f{doc.metadata['origin']} - contenu: {cleaned_page_content}"
+        context = f"{context}\nsource: {doc.metadata['origin']} - contenu: {cleaned_page_content}"
         logger.debug(doc)
 
     if engine == "paradigm":
