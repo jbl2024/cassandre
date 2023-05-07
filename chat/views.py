@@ -20,11 +20,9 @@ def search(request):
             engine = form.cleaned_data['engine'] or "gpt-3.5-turbo"  # Set the engine value to "gpt-3.5-turbo" if it is null
             history = form.cleaned_data['history'] or ""
             results = search_documents(query, history, engine)  # Use the search_documents function
-            source_documents = [document_to_dict(doc) for doc in results['source_documents']]
-
             return JsonResponse({
                 'result': results['result'],
-                'source_documents': source_documents
+                'source_documents': []
             })
     else:
         form = SearchForm()

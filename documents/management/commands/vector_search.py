@@ -22,6 +22,7 @@ class Command(BaseCommand):
             client=client, collection_name="documents", 
             embedding_function=embeddings.embed_query
         )    
+
         res = docsearch.similarity_search_with_score(query, k=4)
         for doc, score in res:
             self.stdout.write(f"# {doc.metadata['origin']} -> {score}")

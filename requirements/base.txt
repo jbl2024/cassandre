@@ -11,3 +11,4 @@ django-tailwind==3.5.0
 celery==5.2.7
 redis==4.5.4
 kombu==5.2.4
+paradigm-client @ git+https://github.com/lightonai/paradigm-client.git@4e09e18e885782c02784f8a108e81e6b036c724b

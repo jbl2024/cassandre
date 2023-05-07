@@ -43,7 +43,7 @@ def index_documents():
                 )
     logger.info(f"All documents are loaded, splitting data")
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=settings.SPLIT_CHUNK_SIZE, chunk_overlap=settings.SPLIT_CHUNK_OVERLAP)
     texts = text_splitter.split_documents(docs)
     logger.info(f"Splitting data done")
 
