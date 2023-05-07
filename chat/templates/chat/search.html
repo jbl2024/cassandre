@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block content %}
 
 <div
-  class="h-full flex flex-col flex-grow w-full max-w-3xl bg-white shadow-xl rounded-lg overflow-hidden"
+  class="fixed h-full h-ios-viewport flex flex-col flex-grow w-full max-w-3xl bg-white shadow-xl rounded-lg overflow-hidden"
 >
   <div
     class="flex flex-col flex-grow h-0 p-4 overflow-auto"
@@ -28,8 +28,8 @@
         <div>
           <div class="bg-gray-300 p-3 mb-3 rounded-r-lg rounded-bl-lg">
             <p class="text-sm whitespace-pre-wrap">
-              Recherchez dans les textes liés au mouvement. Attention : les
-              réponses doivent être vérifiées :)
+Recherchez dans les textes liés au mouvement. Attention : les
+réponses doivent être vérifiées.
             </p>
           </div>
         </div>
@@ -54,7 +54,7 @@
         <form
           id="search-form"
           method="post"
-          class="flex flex-col space-y-4 mb-8"
+          class="flex flex-col"
         >
           {% csrf_token %} {{ form }}
 
@@ -173,12 +173,13 @@
 
     // Create a new div for the user's query
     const queryDiv = document.createElement("div");
-    queryDiv.classList.add("flex", "w-full", "mt-2", "space-x-3", "max-w-xl");
+    queryDiv.classList.add("flex", "justify-end", "w-full", "mt-2", "space-x-3");
 
     const queryTextDiv = document.createElement("div");
     const queryTextContainer = document.createElement("div");
     queryTextContainer.classList.add(
-      "bg-gray-300",
+      "bg-blue-500",
+      "text-white",
       "p-3",
       "mb-3",
       "rounded-r-lg",

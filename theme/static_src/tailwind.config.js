@@ -42,7 +42,11 @@ module.exports = {
         // '../../**/*.py'
     ],
     theme: {
-        extend: {},
+        extend: {
+            height: {
+                'ios-viewport': 'calc(100% - 68px)',
+              },            
+        },
         fontFamily: {
             'sans': ['Inter', ...defaultTheme.fontFamily.sans],
         },
