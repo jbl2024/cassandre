@@ -1,14 +1,30 @@
-from django.conf import settings
-from langchain.vectorstores import Qdrant
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import UnstructuredFileLoader
-from documents.models import Document
-from django.core.files.storage import default_storage
 import io
-import os
-import tempfile
-from documents.embedding import get_embedding
 import logging
+import os
+import re
+import tempfile
+
+from django.conf import settings
+from django.core.files.storage import default_storage
+from langchain.document_loaders import UnstructuredFileLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Qdrant
+
+from documents.embedding import get_embedding
+from documents.models import Document
+
+
+def clean_text(text):
+    # Remove duplicated consecutive spaces
+    text = re.sub(r'\s+', ' ', text)
+
+    # Remove duplicated consecutive end of lines
+    text = re.sub(r'\n+', '\n', text)
+
+    # Remove leading and trailing spaces
+    text = text.strip()
+
+    return text
 
 logger = logging.getLogger('cassandre')
 
@@ -34,6 +50,7 @@ def index_documents():
                 loader = UnstructuredFileLoader(temp_file.name, mode="single")
                 loaded_documents = loader.load()
                 for doc in loaded_documents:
+                    doc.page_content = clean_text(doc.page_content)
                     doc.metadata["origin"] = document.title or os.path.basename(
                         document.file.name
                     )
