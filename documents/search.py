@@ -43,7 +43,7 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
     client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
     docsearch = Qdrant(client, "documents", embeddings.embed_query)
 
-    res = docsearch.similarity_search_with_score(query, k=10)
+    res = docsearch.similarity_search_with_score(query, k=4)
     documents: List[Document] = []
     for doc, score in res:
         if score < 0.80:
@@ -77,7 +77,7 @@ Si tu ne sais pas répondre, tu n'invente rien.
 Tu te base seulement sur le document pour générer la réponse.
 Document: \"{{context}}\"
 Questions: \"{{question}}\"
-Réponse: D'après ce document,""",
+Réponse: D'après ce qui est décrit dans ce document, je peux dire que""",
     )
 
     # Utilise l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
