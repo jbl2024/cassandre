@@ -43,7 +43,7 @@ def search_documents(query, history, engine="gpt-3.5-turbo"):
     client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
     docsearch = Qdrant(client, "documents", embeddings.embed_query)
 
-    res = docsearch.similarity_search_with_score(query, k=4)
+    res = docsearch.similarity_search_with_score(query, k=7)
     documents: List[Document] = []
     for doc, score in res:
         if score < 0.80:
