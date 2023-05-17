@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from typing import List, Optional
 
+import openai
 import qdrant_client
 import tiktoken
 from django.conf import settings
@@ -26,6 +27,7 @@ logger = logging.getLogger("cassandre")
 
 
 class DocsRetriever(BaseRetriever, BaseModel):
+    """ Simple BaseRetriever for qa chain """
     documents: List[Document]
 
     def get_relevant_documents(self, query: str) -> List[Document]:
@@ -34,25 +36,48 @@ class DocsRetriever(BaseRetriever, BaseModel):
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         raise NotImplementedError
 
+class DocumentSearch:
+    def __init__(self):
+        self.embeddings = get_embedding()
+        url = settings.QDRANT_URL
+        self.client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
+        self.docsearch = Qdrant(self.client, "documents", self.embeddings.embed_query)
+
+    def get_relevant_documents(self, query, threshold=0.80, k=6):
+        res = self.docsearch.similarity_search_with_score(query, k=k)
+        documents: List[Document] = []
+        for doc, score in res:
+            if score < threshold:
+                continue
+            doc.page_content = (
+                f"source:'{doc.metadata['origin']}'\ncontenu:{doc.page_content}"
+            )
+            print(score)
+            documents.append(doc)
+        return documents
+
+    def hyde_query(self, query):
+        hypothetical_prompt_template = PromptTemplate(
+            input_variables=["question"],
+            template=f"""{{question}}""",
+        )
+        hypothetical_prompt = hypothetical_prompt_template.format(question=query)
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+                {"role": "system", "content": "En tant que Cassandre, experte en mouvement inter-académique des enseignants, Cassandre, transforme la question en réponse hypothetique"},
+                {"role": "user", "content": hypothetical_prompt},
+            ],
+        )
+
+        return response['choices'][0]['message']['content']
+
 
 def search_documents(query, history, engine="gpt-3.5-turbo"):
     locale.setlocale(locale.LC_TIME, "fr_FR")
 
-    embeddings = get_embedding()
-    url = settings.QDRANT_URL
-    client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
-    docsearch = Qdrant(client, "documents", embeddings.embed_query)
-
-    res = docsearch.similarity_search_with_score(query, k=7)
-    documents: List[Document] = []
-    for doc, score in res:
-        if score < 0.80:
-            continue
-        doc.page_content = (
-            f"source:'{doc.metadata['origin']}'\ncontenu:{doc.page_content}"
-        )
-        print(score)
-        documents.append(doc)
+    document_search = DocumentSearch()
+    documents = document_search.get_relevant_documents(query)
 
     if engine == "paradigm":
         return query_lighton(query, documents)
@@ -77,7 +102,7 @@ Si tu ne sais pas répondre, tu n'invente rien.
 Tu te base seulement sur le document pour générer la réponse.
 Document: \"{{context}}\"
 Questions: \"{{question}}\"
-Réponse: D'après ce qui est décrit dans ce document, je peux dire que""",
+Réponse:""",
     )
 
     # Utilise l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
@@ -163,7 +188,7 @@ Tu es Cassandre et tu réponds à la question en utilisant **uniquement** les in
 Si la réponse n'est pas contenue dans le document, tu réponds "Je ne sais pas". 
 Document: {{context}}
 Question: {{question}}
-Réponse: Selon ce document,""")
+Réponse:""")
 
     qa = RetrievalQA.from_chain_type(
         llm=hf_llm,
