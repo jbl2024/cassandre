@@ -1,4 +1,4 @@
-Django==4.2
+Django==4.2.1
 langchain==0.0.168
 unstructured==0.6.2
 pdfminer.six==20221105
