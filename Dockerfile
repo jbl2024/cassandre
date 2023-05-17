@@ -33,6 +33,11 @@ RUN apt-get update && apt-get install -y curl gnupg build-essential
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get install -y nodejs
 
+# locale
+RUN locale-gen fr_FR.UTF-8
+RUN dpkg-reconfigure locales
+
+
 # Copy the Django project files
 COPY . /app/
 
