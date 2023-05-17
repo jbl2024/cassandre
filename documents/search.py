@@ -1,5 +1,4 @@
 # documents/search.py
-import locale
 import logging
 import os
 import re
@@ -76,7 +75,6 @@ class DocumentSearch:
 
 
 def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents"):
-    locale.setlocale(locale.LC_TIME, "fr_FR")
     category = Category.objects.get(slug=category_slug)
 
     document_search = DocumentSearch(category=category)
