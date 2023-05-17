@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from transformers import pipeline
 
 from documents.embedding import get_embedding
+from documents.models import Category
 
 logger = logging.getLogger("cassandre")
 
@@ -37,14 +38,15 @@ class DocsRetriever(BaseRetriever, BaseModel):
         raise NotImplementedError
 
 class DocumentSearch:
-    def __init__(self):
+    def __init__(self, category):
+        self.category = category
         self.embeddings = get_embedding()
         url = settings.QDRANT_URL
         self.client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
-        self.docsearch = Qdrant(self.client, "documents", self.embeddings.embed_query)
+        self.docsearch = Qdrant(self.client, self.category.slug, self.embeddings.embed_query)
 
     def get_relevant_documents(self, query, threshold=0.80, k=6):
-        res = self.docsearch.similarity_search_with_score(query, k=k)
+        res = self.docsearch.similarity_search_with_score(query, k=self.category.k)
         documents: List[Document] = []
         for doc, score in res:
             if score < threshold:
@@ -73,21 +75,22 @@ class DocumentSearch:
         return response['choices'][0]['message']['content']
 
 
-def search_documents(query, history, engine="gpt-3.5-turbo"):
+def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents"):
     locale.setlocale(locale.LC_TIME, "fr_FR")
+    category = Category.objects.get(slug=category_slug)
 
-    document_search = DocumentSearch()
+    document_search = DocumentSearch(category=category)
     documents = document_search.get_relevant_documents(query)
 
     if engine == "paradigm":
-        return query_lighton(query, documents)
+        return query_lighton(category, query, documents)
     elif engine == "fastchat":
-        return query_fastchat(query, documents)
+        return query_fastchat(category, query, documents)
     else:
-        return query_openai(query, documents, engine)
+        return query_openai(category, query, documents, engine)
 
 
-def query_lighton(query, documents):
+def query_lighton(category, query, documents):
     host_ip = os.environ["PARADIGM_HOST"]
     model = RemoteModel(host_ip, model_name="llm-mini")
 
@@ -95,14 +98,7 @@ def query_lighton(query, documents):
 
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"""Tu es Cassandre et tu réponds aux questions en utilisant **uniquement** les informations contenues dans le document.
-Si tu ne connais pas la réponse, tu réponds simplement "Je ne sais pas" sans rien ajouter d'autre. 
-Si la réponse n'est pas contenue dans le document, tu réponds "Je ne sais pas".
-Si tu ne sais pas répondre, tu n'invente rien.
-Tu te base seulement sur le document pour générer la réponse.
-Document: \"{{context}}\"
-Questions: \"{{question}}\"
-Réponse:""",
+        template=category.prompt
     )
 
     # Utilise l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
@@ -133,20 +129,13 @@ Réponse:""",
         return {"result": "No completions found"}
 
 
-def query_openai(query, documents, engine):
+def query_openai(category, query, documents, engine):
     now = datetime.now()
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"""Nous sommes le {formatted_date_time}.
-Tu es un un robot qui accompagne les gestionnaires qui gèrent le mouvement inter-académique des enseignants. 
-Tu réponds en français au féminin. Ton nom est Cassandre.
-Tu n'as pas besoin de dire bonjour, ni de préciser que tu es un robot d'accompagnement.
-Si tu ne connais pas la réponse, tu n'inventes rien et tu suggère de contacter le responsable du mouvement. 
-Tu réponds en indiquant la source qui t'a permis de répondre à la question (dans le contexte c'est le champ "source:")
-Le contexte que tu connais est le suivant:  {{context}}.
-La question est la suivante: {{question}}""",
+        template=f"Nous sommes le {formatted_date_time}.{category.prompt}"
     )
 
     context = "\n".join([doc.page_content for doc in documents])
@@ -166,7 +155,7 @@ La question est la suivante: {{question}}""",
     return results
 
 
-def query_fastchat(query, documents):
+def query_fastchat(category, query, documents):
     pipe = pipeline(
         task="text2text-generation",
         model="lmsys/fastchat-t5-3b-v1.0",
@@ -183,12 +172,7 @@ def query_fastchat(query, documents):
 
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"""Nous sommes le {formatted_date_time}.
-Tu es Cassandre et tu réponds à la question en utilisant **uniquement** les informations contenues dans le document.
-Si la réponse n'est pas contenue dans le document, tu réponds "Je ne sais pas". 
-Document: {{context}}
-Question: {{question}}
-Réponse:""")
+        template=category.prompt)
 
     qa = RetrievalQA.from_chain_type(
         llm=hf_llm,

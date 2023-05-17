@@ -23,7 +23,8 @@ from chat.views import search
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('search/', search, name='search'), 
+    path('search/<str:category>/', search, name='search'),
+    path('search/', search, name='search'),    
 ]
 
 if settings.DEBUG:
