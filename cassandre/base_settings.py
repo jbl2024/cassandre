@@ -182,12 +182,3 @@ CELERY_RESULT_SERIALIZER = 'json'
 # Index settings
 SPLIT_CHUNK_SIZE = 1000
 SPLIT_CHUNK_OVERLAP = 100
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
-}
