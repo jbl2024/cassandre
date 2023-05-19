@@ -5,7 +5,6 @@ from .global_registry import websockets
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.session_id = self.scope['url_route']['kwargs']['session_id']
-        print(self.session_id)
         websockets[self.session_id] = self
         await self.accept()
 
