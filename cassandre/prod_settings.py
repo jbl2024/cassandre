@@ -33,3 +33,12 @@ SPLIT_CHUNK_SIZE = int(os.environ.get('SPLIT_CHUNK_SIZE', 1000))
 SPLIT_CHUNK_OVERLAP = int(os.environ.get('SPLIT_CHUNK_OVERLAP', 100))
 
 WEBSOCKET_URL = os.environ.get('WEBSOCKET_URL')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [os.environ.get('CHANNEL_REDIS')],
+        },
+    },
+}
