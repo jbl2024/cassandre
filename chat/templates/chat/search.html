@@ -44,21 +44,17 @@
           >Loading...</span
         >
       </div>
-      Merci de patienter
     </div>
   </div>
   <div class="flex-none bg-gray-300">
     <div class="p-3 bg-gray-300 shadow-xl rounded-lg">
       <div class="w-full relative">
-        <form
-          id="search-form"
-          method="post"
-          class="flex flex-col"
-        >
+        <form id="search-form" method="post" class="flex flex-col">
           {% csrf_token %} {{ form }}
 
           <div class="absolute right-2 bottom-1 flex space-x-2">
             <button
+              id="submit"
               type="submit"
               class="h-8 w-8 hover:cursor-pointer rounded-full p-1 bg-blue-500 text-white hover:opacity-80"
             >
@@ -107,6 +103,43 @@
 </div>
 
 <script>
+  let currentResultElement;
+  // generate a random session ID
+  const sessionId = Math.random().toString(36).substring(2, 15);
+
+  // create a WebSocket connection
+  const WEBSOCKET_URL = "{{ websocket_host }}";
+  const socket = new WebSocket(WEBSOCKET_URL + "/ws/chat/" + sessionId + "/");
+
+  function displayToken(token) {
+    currentResultElement.innerHTML += token;
+    scrollToBottom();
+  }
+  // listen for messages from the server
+  socket.onmessage = function (event) {
+    var data = JSON.parse(event.data);
+    var token = data["token"];
+
+    displayToken(token);
+  };
+
+  // listen for any errors
+  socket.onerror = function (event) {
+    document.getElementById("submit").disabled = false;
+    document.getElementById("clear-conversation").disabled = false;
+    console.error("WebSocket error observed:", event);
+  };
+
+  // To send a message to the server
+  // socket.send(JSON.stringify({
+  //    'message': 'your_message'
+  // }));
+
+  // Call onopen directly if socket is already open
+  if (socket.readyState == WebSocket.OPEN) socket.onopen();
+
+  // Close the WebSocket connection when you're done with it.
+  // socket.close();
   const history = [];
 
   const clearConversationBtn = document.getElementById("clear-conversation");
@@ -120,7 +153,7 @@
     resultsDiv.innerHTML = "";
     history.length = 0;
   }
-  
+
   const searchForm = document.getElementById("search-form");
   const resultsResult = document.getElementById("results-result");
   const resultsSourceDocuments = document.getElementById(
@@ -128,6 +161,8 @@
   );
 
   searchForm.addEventListener("submit", async (event) => {
+    document.getElementById("submit").disabled = true;
+    document.getElementById("clear-conversation").disabled = true;
     event.preventDefault();
     const loading = document.getElementById("loading");
     loading.classList.remove("hidden");
@@ -143,7 +178,9 @@
 
     // Add history to the form data before submitting
     formData.set("history", history.join("\n"));
+    formData.append("session_id", sessionId);
 
+    createResults(query);
     const response = await fetch("", {
       method: "POST",
       body: formData,
@@ -152,9 +189,13 @@
     loading.classList.add("hidden");
 
     if (response.ok) {
+      document.getElementById("submit").disabled = false;
+      document.getElementById("clear-conversation").disabled = false;
       const data = await response.json();
-      console.log(data);
-      updateResults(data, query);
+
+      // not used in stream mode
+      // updateResults(data, query);
+      currentResultElement.innerHTML = data.result;
     } else {
       console.error("Error submitting search form:", response.statusText);
     }
@@ -165,6 +206,85 @@
     resultsDiv.scrollTop = resultsDiv.scrollHeight;
   }
 
+  function createResults(query) {
+    const resultsDiv = document.querySelector("#results");
+
+    // Create a new div for the user's query
+    const queryDiv = document.createElement("div");
+    queryDiv.classList.add(
+      "flex",
+      "justify-end",
+      "w-full",
+      "mt-2",
+      "space-x-3"
+    );
+
+    const queryTextDiv = document.createElement("div");
+    const queryTextContainer = document.createElement("div");
+    queryTextContainer.classList.add(
+      "bg-blue-500",
+      "text-white",
+      "p-3",
+      "mb-3",
+      "rounded-r-lg",
+      "rounded-bl-lg"
+    );
+    const queryText = document.createElement("p");
+    queryText.classList.add("text-sm", "whitespace-pre-wrap");
+
+    // Get the user's input query
+    queryText.innerHTML = `Question: ${query ? query : ""}`;
+    queryTextContainer.appendChild(queryText);
+    queryTextDiv.appendChild(queryTextContainer);
+    queryDiv.appendChild(queryTextDiv);
+
+    // Add the user's query div before the answer div
+    resultsDiv.appendChild(queryDiv);
+
+    const div = document.createElement("div");
+    div.classList.add("flex", "w-full", "mt-2", "space-x-3", "max-w-xl");
+
+    const svgDiv = document.createElement("div");
+    svgDiv.classList.add("flex-shrink-0", "h-10", "w-10");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("stroke-width", "1.5");
+    svg.setAttribute("stroke", "currentColor");
+    svg.classList.add("w-6", "h-6");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute(
+      "d",
+      "M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+    );
+    svg.appendChild(path);
+    svgDiv.appendChild(svg);
+    div.appendChild(svgDiv);
+
+    const textDiv = document.createElement("div");
+    const textContainer = document.createElement("div");
+    textContainer.classList.add(
+      "bg-gray-300",
+      "p-3",
+      "mb-3",
+      "rounded-r-lg",
+      "rounded-bl-lg"
+    );
+    const text = document.createElement("p");
+    text.classList.add("text-sm", "whitespace-pre-wrap");
+    text.innerHTML = "";
+    textContainer.appendChild(text);
+    textDiv.appendChild(textContainer);
+    div.appendChild(textDiv);
+    currentResultElement = text
+
+    resultsDiv.appendChild(div);
+    scrollToBottom();
+  }
+
   function updateResults(results, query) {
     const sourceDocuments = results.source_documents;
 
@@ -172,7 +292,13 @@
 
     // Create a new div for the user's query
     const queryDiv = document.createElement("div");
-    queryDiv.classList.add("flex", "justify-end", "w-full", "mt-2", "space-x-3");
+    queryDiv.classList.add(
+      "flex",
+      "justify-end",
+      "w-full",
+      "mt-2",
+      "space-x-3"
+    );
 
     const queryTextDiv = document.createElement("div");
     const queryTextContainer = document.createElement("div");

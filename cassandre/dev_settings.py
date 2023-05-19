@@ -22,3 +22,13 @@ QDRANT_URL = "http://localhost:6333"
 
 INSTALLED_APPS.append('django_browser_reload')
 MIDDLEWARE.append('django_browser_reload.middleware.BrowserReloadMiddleware')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+WEBSOCKET_URL = 'ws://localhost:8000'

@@ -74,7 +74,7 @@ class DocumentSearch:
         return response['choices'][0]['message']['content']
 
 
-def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents"):
+def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents", callback=None):
     category = Category.objects.get(slug=category_slug)
 
     document_search = DocumentSearch(category=category)
@@ -85,7 +85,7 @@ def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="docu
     elif engine == "fastchat":
         return query_fastchat(category, query, documents)
     else:
-        return query_openai(category, query, documents, engine)
+        return query_openai(category, query, documents, engine, callback=callback)
 
 
 def query_lighton(category, query, documents):
@@ -127,7 +127,7 @@ def query_lighton(category, query, documents):
         return {"result": "No completions found"}
 
 
-def query_openai(category, query, documents, engine):
+def query_openai(category, query, documents, engine, callback):
     now = datetime.now()
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
@@ -142,8 +142,10 @@ def query_openai(category, query, documents, engine):
     logger.debug(f"Prompt: {prompt}")
     logger.debug(f"Number of tokens: {len(enc.encode(prompt))}")
 
+    callbacks = [callback] if callback is not None else []
+
     qa = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(temperature=0, model_name=engine),
+        llm=ChatOpenAI(streaming=True, temperature=0, model_name=engine, callbacks=callbacks),
         chain_type="stuff",
         retriever=DocsRetriever(documents=documents),
     )

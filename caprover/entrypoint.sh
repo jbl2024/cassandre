@@ -16,7 +16,8 @@ python manage.py create_superuser
 celery -A cassandre worker --loglevel=info &
 
 # Start Gunicorn
-gunicorn cassandre.wsgi:application \
+gunicorn cassandre.asgi:application \
+    -k uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:8000 \
     --workers 3 \
     --timeout 600 \
