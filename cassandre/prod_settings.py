@@ -32,4 +32,4 @@ CELERY_BROKER_URL= os.environ.get('CELERY_BROKER_URL')
 SPLIT_CHUNK_SIZE = int(os.environ.get('SPLIT_CHUNK_SIZE', 1000))
 SPLIT_CHUNK_OVERLAP = int(os.environ.get('SPLIT_CHUNK_OVERLAP', 100))
 
-WEBSOCKET_URL = 'wss://cassandre.services2.jbl2024.com'
+WEBSOCKET_URL = os.environ.get('WEBSOCKET_URL')
