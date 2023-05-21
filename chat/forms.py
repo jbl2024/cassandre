@@ -10,6 +10,7 @@ class SearchForm(forms.Form):
                 "placeholder": "Posez votre question...",
                 "autofocus": "autofocus",
                 "class": "flex items-center h-10 w-full rounded-lg px-3 text-sm pr-12",
+                "style": "width: calc(100% - 88px);",  # Add inline styles here
             }
         ),
         label="",

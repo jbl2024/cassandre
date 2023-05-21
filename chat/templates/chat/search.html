@@ -9,7 +9,7 @@
     >
       <div id="results">
         <div class="flex w-full mt-2 space-x-3 max-w-xl">
-          <div class="flex-shrink-0 h-10 w-10">
+          <div class="flex-shrink-0 h-10 w-10 hidden md:flex">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -244,7 +244,7 @@
     div.classList.add("flex", "w-full", "mt-2", "space-x-3", "max-w-xl");
 
     const svgDiv = document.createElement("div");
-    svgDiv.classList.add("flex-shrink-0", "h-10", "w-10");
+    svgDiv.classList.add("flex-shrink-0", "h-10", "w-10", "hidden", "md:flex");
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     svg.setAttribute("fill", "none");
