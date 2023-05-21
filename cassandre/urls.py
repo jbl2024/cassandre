@@ -25,7 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('search/<str:category>/', search, name='search'),
     path('search/', search, name='search'),    
-    path('debug/', debug, name='debug'),    
+    path('__internal_cas_debug__/', debug, name='debug'),    
 ]
 
 if settings.DEBUG:
