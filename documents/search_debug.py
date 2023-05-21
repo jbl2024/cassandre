@@ -1,0 +1,186 @@
+# documents/search.py
+import logging
+import os
+import re
+from datetime import datetime
+from typing import List, Optional
+
+import openai
+import qdrant_client
+import tiktoken
+from django.conf import settings
+from langchain import HuggingFacePipeline
+from langchain.chains import RetrievalQA
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.prompts import PromptTemplate
+from langchain.schema import BaseRetriever, Document
+from langchain.vectorstores import Qdrant
+from paradigm_client.remote_model import RemoteModel
+from pydantic import BaseModel
+from transformers import pipeline
+
+from documents.embedding import get_embedding
+from documents.models import Category
+
+logger = logging.getLogger("cassandre")
+
+
+class DocsRetriever(BaseRetriever, BaseModel):
+    """ Simple BaseRetriever for qa chain """
+    documents: List[Document]
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        return self.documents
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        raise NotImplementedError
+
+class DocumentSearch:
+    def __init__(self, category, k):
+        self.category = category
+        self.k = k
+        self.embeddings = get_embedding()
+        url = settings.QDRANT_URL
+        self.client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
+        self.docsearch = Qdrant(self.client, self.category.slug, self.embeddings.embed_query)
+
+    def get_relevant_documents(self, query, threshold=0.80, k=6):
+        res = self.docsearch.similarity_search_with_score(query, k=self.k)
+        documents: List[Document] = []
+        for doc, score in res:
+            if score < threshold:
+                continue
+            doc.page_content = (
+                f"source:'{doc.metadata['origin']}'\ncontenu:{doc.page_content}"
+            )
+            print(score)
+            documents.append(doc)
+        return documents
+
+    def hyde_query(self, query):
+        hypothetical_prompt_template = PromptTemplate(
+            input_variables=["question"],
+            template=f"""{{question}}""",
+        )
+        hypothetical_prompt = hypothetical_prompt_template.format(question=query)
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+                {"role": "system", "content": "En tant que Cassandre, experte en mouvement inter-académique des enseignants, Cassandre, transforme la question en réponse hypothetique"},
+                {"role": "user", "content": hypothetical_prompt},
+            ],
+        )
+
+        return response['choices'][0]['message']['content']
+
+
+def search_documents_debug(engine, category_id, prompt, k, query, callback=None):
+    category = Category.objects.get(id=category_id)
+
+    document_search = DocumentSearch(category=category, k=k)
+    documents = document_search.get_relevant_documents(query)
+
+    if engine == "paradigm":
+        return query_lighton(prompt, query, documents)
+    elif engine == "fastchat":
+        return query_fastchat(prompt, query, documents)
+    else:
+        return query_openai(prompt, query, documents, engine, callback=callback)
+
+
+def query_lighton(prompt, query, documents):
+    host_ip = os.environ["PARADIGM_HOST"]
+    model = RemoteModel(host_ip, model_name="llm-mini")
+
+    context = "\n".join([doc.page_content for doc in documents])
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"],
+        template=prompt
+    )
+
+    # Utilise l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
+    tokenize_response = model.tokenize("Je ne sais pas")
+
+    # Récupére les ID de tokens à partir de la réponse
+    token_ids = [list(token.values())[0] for token in tokenize_response.tokens]
+
+    # Ajoute un biais positif pour ces tokens
+    biases = {token_id: 5 for token_id in token_ids}
+
+    prompt = prompt_template.format(context=context, question=query)
+
+    logger.debug("### paradigm")
+    logger.debug(f"Prompt: {prompt}")
+    logger.debug(f"Number of tokens: {len(model.tokenize(prompt).tokens)}")
+
+    parameters = {
+        "n_tokens": 500,
+        "temperature": 0,
+        "biases": biases,
+    }
+
+    paradigm_result = model.create(prompt, **parameters)
+    if hasattr(paradigm_result, "completions") and len(paradigm_result.completions) > 0:
+        return {"result": paradigm_result.completions[0].output_text, "input": prompt}
+    else:
+        return {"result": "No completions found"}
+
+
+def query_openai(prompt, query, documents, engine, callback):
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"],
+        template=f"Nous sommes le {formatted_date_time}.{prompt}"
+    )
+
+    context = "\n".join([doc.page_content for doc in documents])
+    prompt = prompt_template.format(context=context, question=query)
+    enc = tiktoken.get_encoding("cl100k_base")
+    logger.debug(f"Prompt: {prompt}")
+    logger.debug(f"Number of tokens: {len(enc.encode(prompt))}")
+
+    callbacks = [callback] if callback is not None else []
+
+    qa = RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(streaming=True, temperature=0, model_name=engine, callbacks=callbacks),
+        chain_type="stuff",
+        retriever=DocsRetriever(documents=documents),
+    )
+    qa.combine_documents_chain.llm_chain.prompt = prompt_template
+
+    results = qa({"query": query}, return_only_outputs=True)
+    return results
+
+
+def query_fastchat(prompt, query, documents):
+    pipe = pipeline(
+        task="text2text-generation",
+        model="lmsys/fastchat-t5-3b-v1.0",
+        model_kwargs={
+            "load_in_8bit": False,
+            "max_length": 512,
+            "temperature": 0.0,
+        },
+    )
+    hf_llm = HuggingFacePipeline(pipeline=pipe)
+
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"],
+        template=prompt)
+
+    qa = RetrievalQA.from_chain_type(
+        llm=hf_llm,
+        chain_type="stuff",
+        retriever=DocsRetriever(documents=documents),
+    )
+    qa.combine_documents_chain.llm_chain.prompt = prompt_template
+
+    results = qa({"query": query}, return_only_outputs=True)
+    return results

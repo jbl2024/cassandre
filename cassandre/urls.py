@@ -18,13 +18,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from chat.views import search
+from chat.views import search, debug
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('search/<str:category>/', search, name='search'),
     path('search/', search, name='search'),    
+    path('debug/', debug, name='debug'),    
 ]
 
 if settings.DEBUG:

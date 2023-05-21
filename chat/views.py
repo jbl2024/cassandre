@@ -11,8 +11,9 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 from documents.models import Category, Document
 from documents.search import search_documents
+from documents.search_debug import search_documents_debug
 
-from .forms import SearchForm
+from .forms import SearchForm, DebugForm
 from .global_registry import websockets
 
 
@@ -116,3 +117,26 @@ def search(request, category="documents"):
         "chat/search.html",
         {"form": form, "category": category, "websocket_host": settings.WEBSOCKET_URL},
     )
+
+
+def debug(request):
+    category_id = request.GET.get('category')
+    results = ""
+    if category_id:
+        category = Category.objects.get(id=category_id)
+        form = DebugForm(instance=category)
+    else:
+        form = DebugForm()
+
+    if request.method == 'POST':
+        form = DebugForm(request.POST)
+        if form.is_valid():
+            engine = form.cleaned_data['engine']
+            category_id = form.cleaned_data['category'].id
+            prompt = form.cleaned_data['prompt']
+            k = form.cleaned_data['k']
+            query = form.cleaned_data['query']
+            results = search_documents_debug(engine, category_id, prompt, k, query)
+            # Do something with the results here, if needed
+
+    return render(request, 'chat/debug.html', {'form': form, "results": results})

@@ -1,0 +1,69 @@
+{% extends 'base.html' %} {% block content %}
+
+<form method="post" id="debug-form" class="p-6 mx-auto bg-white rounded-xl shadow-md">
+  {% csrf_token %}
+  <div>
+      <div class="text-xl font-medium text-black">
+          <h2>Debug Form</h2>
+      </div>
+      <div class="pt-2 flex space-x-4">
+          <div class="w-1/3">
+              {{ form.category.label_tag }}<br>
+              {{ form.category }}
+          </div>
+          <div class="w-1/3">
+              {{ form.k.label_tag }}<br>
+              {{ form.k }}
+          </div>
+          <div class="w-1/3">
+              {{ form.engine.label_tag }}<br>
+              {{ form.engine }}
+          </div>
+      </div>
+      <div class="pt-2">
+          {{ form.name.label_tag }}<br>
+          {{ form.name }}
+      </div>
+      <div class="pt-2">
+          {{ form.prompt.label_tag }}<br>
+          {{ form.prompt }}
+      </div>
+
+      <div class="pt-2">
+        {{ form.query.label_tag }}<br>
+        {{ form.query }}
+    </div>
+
+      <div class="pt-4">
+          <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button>
+      </div>
+  </div>
+</form>
+
+{% if results %}
+    <div class="mt-4 p-6 mx-auto bg-white rounded-xl shadow-md">
+        <div class="font-mono text-sm">
+            <h3>Result:</h3>
+            <pre class="whitespace-pre-wrap">{% autoescape off %}{{ results.result }}{% endautoescape %}</pre>
+        </div>
+        <div class="font-mono text-sm mt-4">
+            <h3>Input:</h3>
+            <pre class="whitespace-pre-wrap">{% autoescape off %}{{ results.input }}{% endautoescape %}</pre>
+        </div>
+    </div>
+{% endif %}
+<script>
+  window.onload = function () {
+    console.log("coco");
+    var categorySelect = document.getElementById("category-select");
+    if (categorySelect) {
+      categorySelect.addEventListener("change", function () {
+        var selectedCategoryId = this.value;
+        window.location.href =
+          window.location.pathname + "?category=" + selectedCategoryId;
+      });
+    }
+  };
+</script>
+
+{% endblock %}
