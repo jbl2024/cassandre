@@ -27,7 +27,8 @@ logger = logging.getLogger("cassandre")
 
 
 class DocsRetriever(BaseRetriever, BaseModel):
-    """ Simple BaseRetriever for qa chain """
+    """Simple BaseRetriever for qa chain"""
+
     documents: List[Document]
 
     def get_relevant_documents(self, query: str) -> List[Document]:
@@ -36,6 +37,7 @@ class DocsRetriever(BaseRetriever, BaseModel):
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         raise NotImplementedError
 
+
 class DocumentSearch:
     def __init__(self, category, k):
         self.category = category
@@ -43,7 +45,9 @@ class DocumentSearch:
         self.embeddings = get_embedding()
         url = settings.QDRANT_URL
         self.client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
-        self.docsearch = Qdrant(self.client, self.category.slug, self.embeddings.embed_query)
+        self.docsearch = Qdrant(
+            self.client, self.category.slug, self.embeddings.embed_query
+        )
 
     def get_relevant_documents(self, query, threshold=0.80, k=6):
         res = self.docsearch.similarity_search_with_score(query, k=self.k)
@@ -65,39 +69,46 @@ class DocumentSearch:
         )
         hypothetical_prompt = hypothetical_prompt_template.format(question=query)
         response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-                {"role": "system", "content": "En tant que Cassandre, experte en mouvement inter-académique des enseignants, Cassandre, transforme la question en réponse hypothetique"},
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "En tant que Cassandre, experte en mouvement inter-académique des enseignants, Cassandre, transforme la question en réponse hypothetique",
+                },
                 {"role": "user", "content": hypothetical_prompt},
             ],
         )
 
-        return response['choices'][0]['message']['content']
+        return response["choices"][0]["message"]["content"]
 
 
-def search_documents_debug(engine, category_id, prompt, k, query, callback=None):
+def search_documents_debug(engine, category_id, prompt, k, query, raw_input=False, callback=None):
     category = Category.objects.get(id=category_id)
 
     document_search = DocumentSearch(category=category, k=k)
-    documents = document_search.get_relevant_documents(query)
+    if raw_input:
+        documents = []
+    else:
+        documents = document_search.get_relevant_documents(query)
 
     if engine == "paradigm":
-        return query_lighton(prompt, query, documents)
+        return query_lighton(prompt, query, documents, raw_input)
     elif engine == "fastchat":
-        return query_fastchat(prompt, query, documents)
+        return query_fastchat(prompt, query, documents, raw_input)
     else:
-        return query_openai(prompt, query, documents, engine, callback=callback)
+        return query_openai(prompt, query, documents, engine, raw_input, callback=callback)
 
 
-def query_lighton(prompt, query, documents):
+def query_lighton(prompt, query, documents, raw_input):
     host_ip = os.environ["PARADIGM_HOST"]
     model = RemoteModel(host_ip, model_name="llm-mini")
 
     context = "\n".join([doc.page_content for doc in documents])
 
+    if raw_input:
+        prompt = "{question}{context}" + prompt
     prompt_template = PromptTemplate(
-        input_variables=["question", "context"],
-        template=prompt
+        input_variables=["question", "context"], template=prompt
     )
 
     # Utilise l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
@@ -111,9 +122,10 @@ def query_lighton(prompt, query, documents):
 
     prompt = prompt_template.format(context=context, question=query)
 
+    token_count = len(model.tokenize(prompt).tokens)
     logger.debug("### paradigm")
     logger.debug(f"Prompt: {prompt}")
-    logger.debug(f"Number of tokens: {len(model.tokenize(prompt).tokens)}")
+    logger.debug(f"Number of tokens: {token_count}")
 
     parameters = {
         "n_tokens": 500,
@@ -123,40 +135,47 @@ def query_lighton(prompt, query, documents):
 
     paradigm_result = model.create(prompt, **parameters)
     if hasattr(paradigm_result, "completions") and len(paradigm_result.completions) > 0:
-        return {"result": paradigm_result.completions[0].output_text, "input": prompt}
+        return {"result": paradigm_result.completions[0].output_text, "input": prompt, "token_count": token_count}
     else:
         return {"result": "No completions found"}
 
 
-def query_openai(prompt, query, documents, engine, callback):
+def query_openai(prompt, query, documents, engine, raw_input, callback):
     now = datetime.now()
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
+    if raw_input:
+        prompt = "{question}{context}" + prompt
+
+
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"Nous sommes le {formatted_date_time}.{prompt}"
+        template=f"Nous sommes le {formatted_date_time}.{prompt}",
     )
 
     context = "\n".join([doc.page_content for doc in documents])
     prompt = prompt_template.format(context=context, question=query)
     enc = tiktoken.get_encoding("cl100k_base")
+    token_count = len(enc.encode(prompt))
     logger.debug(f"Prompt: {prompt}")
-    logger.debug(f"Number of tokens: {len(enc.encode(prompt))}")
+    logger.debug(f"Number of tokens: {token_count}")
 
     callbacks = [callback] if callback is not None else []
 
     qa = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(streaming=True, temperature=0, model_name=engine, callbacks=callbacks),
+        llm=ChatOpenAI(
+            streaming=True, temperature=0, model_name=engine, callbacks=callbacks
+        ),
         chain_type="stuff",
         retriever=DocsRetriever(documents=documents),
     )
     qa.combine_documents_chain.llm_chain.prompt = prompt_template
 
     results = qa({"query": query}, return_only_outputs=True)
-    return results
+    return {"result": results["result"], "input": prompt, "token_count": token_count}
 
 
-def query_fastchat(prompt, query, documents):
+def query_fastchat(prompt, query, documents, raw_input):
     pipe = pipeline(
         task="text2text-generation",
         model="lmsys/fastchat-t5-3b-v1.0",
@@ -171,9 +190,12 @@ def query_fastchat(prompt, query, documents):
     now = datetime.now()
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
+    if raw_input:
+        prompt = "{question}{context}" + prompt
+
     prompt_template = PromptTemplate(
-        input_variables=["question", "context"],
-        template=prompt)
+        input_variables=["question", "context"], template=prompt
+    )
 
     qa = RetrievalQA.from_chain_type(
         llm=hf_llm,

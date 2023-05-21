@@ -36,8 +36,8 @@ class DebugForm(forms.ModelForm):
     prompt = forms.CharField(
         widget=forms.Textarea(attrs={"style": "font-family:monospace;", "cols": "120"})
     )
-
-    query = forms.CharField(
+    raw_input = forms.BooleanField(required=False)
+    query = forms.CharField(required=False,
         widget=forms.Textarea(attrs={"style": "font-family:monospace;", "cols": "120", "rows": "4"})
     )
 
@@ -51,4 +51,4 @@ class DebugForm(forms.ModelForm):
             self.fields["category"].initial = self.instance.id
             self.fields["prompt"].initial = self.instance.prompt
             self.fields["k"].initial = self.instance.k
-        self.order_fields(["category", "prompt", "k", "engine", "query"])
+        self.order_fields(["category", "prompt", "k", "engine", "raw_input", "query"])

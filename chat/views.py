@@ -136,7 +136,8 @@ def debug(request):
             prompt = form.cleaned_data['prompt']
             k = form.cleaned_data['k']
             query = form.cleaned_data['query']
-            results = search_documents_debug(engine, category_id, prompt, k, query)
+            raw_input = form.cleaned_data['raw_input']
+            results = search_documents_debug(engine, category_id, prompt, k, query, raw_input)
             # Do something with the results here, if needed
 
     return render(request, 'chat/debug.html', {'form': form, "results": results})
