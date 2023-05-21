@@ -44,7 +44,7 @@ module.exports = {
     theme: {
         extend: {
             height: {
-                'ios-viewport': 'calc(100% - 68px)',
+                'ios-viewport': '100%',
               },            
         },
         fontFamily: {
