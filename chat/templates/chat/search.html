@@ -50,7 +50,7 @@
           <form id="search-form" method="post" class="flex flex-col">
             {% csrf_token %} {{ form }}
 
-            <div class="absolute right-2 bottom-1 flex space-x-2">
+            <div class="hidden md:flex absolute right-2 bottom-1 flex space-x-2">
               <button
                 id="submit"
                 type="submit"

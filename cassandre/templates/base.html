@@ -4,9 +4,22 @@
 	<head>
     <title>Cassandre</title>
 		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />		
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		{% tailwind_css %}
+
+		<style>
+			/* By default apply the style */
+			.responsive-width {
+					width: calc(100% - 88px);
+			}
+
+			@media screen and (max-width: 768px) {
+					.responsive-width {
+							width: 100%;
+					}
+			}			
+		</style>
 	</head>
 
 	<body class="bg-gray-50 font-serif leading-normal tracking-normal">
