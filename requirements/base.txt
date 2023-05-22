@@ -20,7 +20,5 @@ sentencepiece==0.1.99
 # see https://github.com/Muennighoff/sgpt/issues/14#issuecomment-1529010350
 sentence-transformers @ git+https://github.com/Muennighoff/sentence-transformers.git@5c025b34ea665a98cbac028e45d1cea91dc33b86
 
-daphne==4.0.0
 channels==4.0.0
 channels-redis==4.1.0
-
