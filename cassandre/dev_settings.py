@@ -22,6 +22,7 @@ QDRANT_URL = "http://localhost:6333"
 
 INSTALLED_APPS.append('django_browser_reload')
 MIDDLEWARE.append('django_browser_reload.middleware.BrowserReloadMiddleware')
+MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
 
 CHANNEL_LAYERS = {
     'default': {
@@ -32,3 +33,6 @@ CHANNEL_LAYERS = {
     },
 }
 WEBSOCKET_URL = 'ws://localhost:8000'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
