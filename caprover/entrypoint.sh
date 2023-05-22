@@ -15,11 +15,5 @@ python manage.py create_superuser
 # Start Celery worker in the background
 celery -A cassandre worker --loglevel=info &
 
-# Start gunicorn
-gunicorn cassandre.asgi:application \
-    -k uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:8000 \
-    --workers 3 \
-    --timeout 600 \
-    --access-logfile '-' \
-    --error-logfile '-'
+# Start Daphne
+daphne cassandre.asgi:application
