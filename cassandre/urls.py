@@ -18,11 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from chat.views import search, debug
-
+from chat.views import search, debug, SearchAPIView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/search/<str:category>/', SearchAPIView.as_view(), name='search_api'),
     path('search/<str:category>/', search, name='search'),
     path('search/', search, name='search'),    
     path('__internal_cas_debug__/', debug, name='debug'),    

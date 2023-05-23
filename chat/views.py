@@ -3,17 +3,18 @@ from typing import Any, Dict, List, Union
 
 from asgiref.sync import async_to_sync
 from django.conf import settings
-from django.core import serializers
 from django.http import JsonResponse
 from django.shortcuts import render
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from documents.models import Category, Document
+from documents.models import Category
 from documents.search import search_documents
 from documents.search_debug import search_documents_debug
 
-from .forms import SearchForm, DebugForm
+from .forms import DebugForm, SearchForm
 from .global_registry import websockets
 
 
@@ -141,3 +142,17 @@ def debug(request):
             # Do something with the results here, if needed
 
     return render(request, 'chat/debug.html', {'form': form, "results": results})
+
+class SearchAPIView(APIView):
+    def post(self, request, category="documents"):
+
+        form = SearchForm(request.data)
+        if form.is_valid():
+            query = form.cleaned_data["query"]
+            engine = form.cleaned_data["engine"] or "gpt-3.5-turbo"
+            history = form.cleaned_data["history"] or ""
+            results = search_documents(query, history, engine, category)
+
+            return Response({"result": results["result"], "source_documents": []})
+
+        return Response(form.errors, status=400)

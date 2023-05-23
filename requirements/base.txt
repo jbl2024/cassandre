@@ -22,3 +22,7 @@ sentence-transformers @ git+https://github.com/Muennighoff/sentence-transformers
 
 channels==4.0.0
 channels-redis==4.1.0
+
+djangorestframework==3.14.0
+Markdown==3.4.3
+django-filter==23.2
