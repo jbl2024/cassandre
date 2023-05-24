@@ -180,6 +180,7 @@
     formData.append("session_id", sessionId);
 
     createResults(query);
+    searchForm.reset();
     const response = await fetch("", {
       method: "POST",
       body: formData,
