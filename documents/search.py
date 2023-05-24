@@ -37,7 +37,9 @@ class DocsRetriever(BaseRetriever, BaseModel):
         raise NotImplementedError
 
 class DocumentSearch:
+
     def __init__(self, category):
+        self.abbreviation_dict = {"sft": "supplément familial de traitement", "iff": "indemnité forfaitaire de formation"}
         self.category = category
         self.embeddings = get_embedding()
         url = settings.QDRANT_URL
@@ -45,6 +47,8 @@ class DocumentSearch:
         self.docsearch = Qdrant(self.client, self.category.slug, self.embeddings.embed_query)
 
     def get_relevant_documents(self, query, threshold=0.80, k=6):
+        query = self.normalize_query(query)
+        print(query)
         res = self.docsearch.similarity_search_with_score(query, k=self.category.k)
         documents: List[Document] = []
         for doc, score in res:
@@ -73,6 +77,11 @@ class DocumentSearch:
 
         return response['choices'][0]['message']['content']
 
+    def normalize_query(self, query):
+        query = query.lower()
+        for abbr, full_form in self.abbreviation_dict.items():
+            query = re.sub(fr'\b{abbr}\b', f'{abbr} ({full_form})', query)
+        return query
 
 def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents", callback=None):
     category = Category.objects.get(slug=category_slug)
