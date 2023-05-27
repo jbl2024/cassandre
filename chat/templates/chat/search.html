@@ -7,6 +7,61 @@
       class="flex flex-col flex-grow h-0 p-4 overflow-auto"
       id="results-container"
     >
+      <div
+        id="modal"
+        class="fixed inset-0 flex items-center justify-center z-50 invisible opacity-0 pointer-events-none transition-all duration-300 ease-in-out"
+      >
+        <div
+          class="bg-white rounded shadow-lg w-1/2 border-4 border-black relative"
+        >
+          <button
+            id="closeModal"
+            class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          >
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+          <form id="modal-form" method="post">
+            <div class="p-4">
+              <h2 class="text-2xl">Proposition de correction</h2>
+              <div class="mt-3">
+                <label for="query" class="block text-sm">Question :</label>
+                <textarea
+                  id="query-text-area"
+                  class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none"
+                  rows="4"
+                ></textarea>
+              </div>
+              <div class="mt-3">
+                <label for="answer" class="block text-sm">Réponse :</label>
+                <textarea
+                  id="answer-text-area"
+                  class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none"
+                  rows="4"
+                ></textarea>
+              </div>
+              <div class="mt-4">
+                <button
+                  id="correct-submit"
+                  class="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 focus:outline-none"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div id="results">
         <div class="flex w-full mt-2 space-x-3 max-w-xl">
           <div class="flex-shrink-0 h-10 w-10 hidden md:flex">
@@ -27,7 +82,9 @@
           </div>
           <div>
             <div class="bg-gray-300 p-3 mb-3 rounded-r-lg rounded-bl-lg">
-              <p class="text-sm whitespace-pre-wrap">{{ category.welcome_message}}</p>
+              <p class="text-sm whitespace-pre-wrap">
+                {{ category.welcome_message}}
+              </p>
             </div>
           </div>
         </div>
@@ -50,7 +107,9 @@
           <form id="search-form" method="post" class="flex flex-col">
             {% csrf_token %} {{ form }}
 
-            <div class="hidden md:flex absolute right-2 bottom-1 flex space-x-2">
+            <div
+              class="hidden md:flex absolute right-2 bottom-1 flex space-x-2"
+            >
               <button
                 id="submit"
                 type="submit"
@@ -102,6 +161,21 @@
 </div>
 
 <script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
   let currentResultElement;
   // generate a random session ID
   const sessionId = Math.random().toString(36).substring(2, 15);
@@ -281,9 +355,97 @@
     div.appendChild(textDiv);
     currentResultElement = text;
 
+    const correctionLink = document.createElement("a");
+    correctionLink.href = "#";
+    correctionLink.innerText = "Corriger";
+    correctionLink.classList.add(
+      "inline-flex",
+      "items-center",
+      "px-2.5",
+      "py-0.5",
+      "rounded-md",
+      "text-xs",
+      "font-medium",
+      "bg-purple-500",
+      "text-white",
+      "hover:bg-purple-700",
+      "mt-2"
+    );
+    correctionLink.dataset.query = query; // Store the query in a data attribute
+    correctionLink.addEventListener("click", openCorrectionModal);
+
     resultsDiv.appendChild(div);
+    resultsDiv.appendChild(correctionLink); // Attach the correction link to the query text container
     scrollToBottom();
   }
+
+  const queryTextArea = document.querySelector("#query-text-area");
+  const answerTextArea = document.querySelector("#answer-text-area");
+
+  function openCorrectionModal(event) {
+    event.preventDefault(); // Prevent the default action (navigation) of clicking the link
+
+    const modal = document.getElementById("modal");
+
+    const query = event.target.dataset.query;
+    const result = currentResultElement.textContent;
+
+    queryTextArea.value = query;
+    answerTextArea.value = result;
+
+    modal.classList.remove("invisible", "opacity-0", "pointer-events-none");
+    modal.classList.add("visible", "opacity-100");
+  }
+
+  function closeCorrectionModal() {
+    const modal = document.getElementById("modal");
+
+    modal.classList.add("invisible", "opacity-0", "pointer-events-none");
+    modal.classList.remove("visible", "opacity-100");
+  }
+  document
+    .getElementById("closeModal")
+    .addEventListener("click", closeCorrectionModal);
+
+  const correctForm = document.querySelector("#modal-form");
+  correctForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const query = queryTextArea.value;
+    const answer = answerTextArea.value;
+
+    const id = "{{category.id}}";
+
+    const formData = new FormData();
+    formData.append("query", query);
+    formData.append("answer", answer);
+
+    fetch(`/correct/${id}/`, {
+      method: "POST",
+      headers: {
+        // CSRF token is needed when making POST requests in Django
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status === "error") {
+          throw new Error(data.message || "An error occurred");
+        }
+        console.log("Success:", data);
+        closeCorrectionModal();
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert(error.message);
+      });
+  });
 
   function updateResults(results, query) {
     const sourceDocuments = results.source_documents;

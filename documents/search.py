@@ -163,13 +163,22 @@ def query_openai(category, query, documents, engine, callback):
     results = qa({"query": query}, return_only_outputs=True)
     return results
 
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
 def query_fastchat(category, query, documents):
+    # model = "tiiuae/falcon-7b-instruct"
+    model = "lmsys/fastchat-t5-3b-v1.0"
+    tokenizer = AutoTokenizer.from_pretrained(model)
     pipe = pipeline(
-        task="text2text-generation",
-        model="lmsys/fastchat-t5-3b-v1.0",
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        # torch_dtype=torch.bfloat16,
+        trust_remote_code=True,
+        device="mps",
         model_kwargs={
-            "load_in_8bit": False,
+            # "load_in_8bit": False,
             "max_length": 512,
             "temperature": 0.0,
         },

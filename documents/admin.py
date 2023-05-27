@@ -4,7 +4,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from .models import Category, Document
+from .models import Category, Document, Correction
 from .tasks import index_documents, index_documents_in_category
 
 
@@ -30,10 +30,13 @@ class DocumentInline(admin.TabularInline):
     model = Document
     extra = 1  # number of extra forms to display
 
+class CorrectionInline(admin.TabularInline):  # New Inline class for Correction
+    model = Correction
+    extra = 1
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    inlines = [DocumentInline]
+    inlines = [DocumentInline, CorrectionInline]
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         formfield = super().formfield_for_dbfield(db_field, **kwargs)
@@ -41,3 +44,8 @@ class CategoryAdmin(admin.ModelAdmin):
             formfield.widget = forms.Textarea(attrs={'style': 'font-family:monospace;', 'cols': '120'})
         return formfield
     actions = [index_documents_in_category_action]
+
+@admin.register(Correction) 
+class CorrectionAdmin(admin.ModelAdmin):
+    list_display = ('category', 'query', 'answer', 'corrected_at')
+    list_filter = ['category', ]
