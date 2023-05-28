@@ -1,10 +1,14 @@
 docker:
 		docker-compose up
 
-runserver_dev:
+runserver_dev_asgi:
 		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
 		python manage.py collectstatic --no-input; \
 		uvicorn cassandre.asgi:application --reload --timeout-graceful-shutdown 5
+
+runserver_dev:
+		export DJANGO_SETTINGS_MODULE=cassandre.dev_settings; \
+		python manage.py runserver
 
 stop:
 		kill -9 $(shell ps aux | grep 'uvicorn' | awk '{print $$2}')
