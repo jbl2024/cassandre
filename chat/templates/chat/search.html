@@ -319,6 +319,9 @@
     div.classList.add("flex", "w-full", "mt-2", "space-x-3", "max-w-xl");
 
     const svgDiv = document.createElement("div");
+    svgDiv.dataset.query = query; // Store the query in a data attribute
+    svgDiv.addEventListener("click", openCorrectionModal);
+
     svgDiv.classList.add("flex-shrink-0", "h-10", "w-10", "hidden", "md:flex");
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -354,28 +357,7 @@
     textDiv.appendChild(textContainer);
     div.appendChild(textDiv);
     currentResultElement = text;
-
-    const correctionLink = document.createElement("a");
-    correctionLink.href = "#";
-    correctionLink.innerText = "Corriger";
-    correctionLink.classList.add(
-      "inline-flex",
-      "items-center",
-      "px-2.5",
-      "py-0.5",
-      "rounded-md",
-      "text-xs",
-      "font-medium",
-      "bg-purple-500",
-      "text-white",
-      "hover:bg-purple-700",
-      "mt-2"
-    );
-    correctionLink.dataset.query = query; // Store the query in a data attribute
-    correctionLink.addEventListener("click", openCorrectionModal);
-
     resultsDiv.appendChild(div);
-    resultsDiv.appendChild(correctionLink); // Attach the correction link to the query text container
     scrollToBottom();
   }
 
@@ -387,7 +369,7 @@
 
     const modal = document.getElementById("modal");
 
-    const query = event.target.dataset.query;
+    const query = event.currentTarget.dataset.query;
     const result = currentResultElement.textContent;
 
     queryTextArea.value = query;
