@@ -13,12 +13,13 @@ from langchain import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.llms import VertexAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores import Qdrant
 from paradigm_client.remote_model import RemoteModel
 from pydantic import BaseModel
-from transformers import pipeline
+from transformers import AutoTokenizer, pipeline
 
 from documents.embedding import get_embedding
 from documents.models import Category
@@ -93,6 +94,8 @@ def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="docu
         return query_lighton(category, query, documents)
     elif engine == "fastchat":
         return query_fastchat(category, query, documents)
+    elif engine == "vertexai":
+        return query_vertexai(category, query, documents)
     else:
         return query_openai(category, query, documents, engine, callback=callback)
 
@@ -163,8 +166,31 @@ def query_openai(category, query, documents, engine, callback):
     results = qa({"query": query}, return_only_outputs=True)
     return results
 
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
+def query_vertexai(category, query, documents):
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"],
+        template=f"Nous sommes le {formatted_date_time}.{category.prompt}"
+    )
+
+    context = "\n".join([doc.page_content for doc in documents])
+    prompt = prompt_template.format(context=context, question=query)
+    enc = tiktoken.get_encoding("cl100k_base")
+    logger.debug(f"Prompt: {prompt}")
+    logger.debug(f"Number of tokens: {len(enc.encode(prompt))}")
+
+    qa = RetrievalQA.from_chain_type(
+        llm=VertexAI(),
+        chain_type="stuff",
+        retriever=DocsRetriever(documents=documents),
+    )
+    qa.combine_documents_chain.llm_chain.prompt = prompt_template
+
+    results = qa({"query": query}, return_only_outputs=True)
+    return results
+
 
 def query_fastchat(category, query, documents):
     # model = "tiiuae/falcon-7b-instruct"
