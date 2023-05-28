@@ -77,7 +77,7 @@ def index_documents(category_id=None):
             document = LangchainDocument(
                 page_content=f"Question: {correction.query}\nRéponse: {correction.answer}",
                 metadata={
-                    "origin": f"correction-{correction.id}",
+                    "origin": f"correction manuelle",
                     "source": f"correction-{correction.id}",
                 },
             )
