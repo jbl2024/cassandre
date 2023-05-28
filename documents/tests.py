@@ -1,6 +1,6 @@
 import hashlib
 
-# Create your tests here.
+from django.db import IntegrityError
 from django.test import TestCase
 from django.utils.text import slugify
 
@@ -41,3 +41,10 @@ class CorrectionModelTest(TestCase):
 
     def test_query_hash_created(self):
         self.assertEqual(self.correction.query_hash, hashlib.sha1(self.correction.query.encode()).hexdigest())
+
+
+    def test_uniqueness_constraint(self):
+        # Try to create a new Correction with the same category and query
+        with self.assertRaises(IntegrityError):
+            duplicate_correction = Correction.objects.create(query="Test query", answer="Another test answer", category=self.category)
+
