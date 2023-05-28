@@ -14,18 +14,26 @@ def correct(request, category_id):
 
         form = CorrectionForm(data)
         if form.is_valid():
-            try:
-                # Try to get an existing correction
+            correction = form.save(commit=False)
+            if form.cleaned_data.get('mark_as_deleted'):
+                # The 'mark as deleted' box was checked
                 correction = Correction.objects.get(
                     category=category, query=form.cleaned_data["query"]
                 )
-                # Update existing correction
-                correction.query = form.cleaned_data["query"]
-                correction.answer = form.cleaned_data["answer"]
-                correction.save()
-            except ObjectDoesNotExist:
-                # If it doesn't exist, create a new one
-                form.save()
+                correction.delete()
+            else:
+                try:
+                    # Try to get an existing correction
+                    correction = Correction.objects.get(
+                        category=category, query=form.cleaned_data["query"]
+                    )
+                    # Update existing correction
+                    correction.query = form.cleaned_data["query"]
+                    correction.answer = form.cleaned_data["answer"]
+                    correction.save()
+                except ObjectDoesNotExist:
+                    # If it doesn't exist, create a new one
+                    form.save()
 
             return JsonResponse(
                 {"status": "success", "message": "Correction saved successfully."},
