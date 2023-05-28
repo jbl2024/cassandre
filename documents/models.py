@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 from django.utils.text import slugify
+import hashlib
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
@@ -24,14 +25,40 @@ Tu réponds en indiquant la source qui t'a permis de répondre à la question (d
 Le contexte que tu connais est le suivant:  {context}.
 La question est la suivante: {question}"""
         super().save(*args, **kwargs)
+
     class Meta:
         verbose_name_plural = "Categories"
 
+
 class Document(models.Model):
-    file = models.FileField(upload_to='documents/', max_length=255)
+    file = models.FileField(upload_to="documents/", max_length=255)
     title = models.CharField(max_length=255, blank=True, null=False)
     created_at = models.DateTimeField(default=timezone.now)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title or str(self.file)
+
+
+class Correction(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    query = models.TextField()
+    query_hash = models.CharField(max_length=64, editable=False, null=False)  # Used for indexing
+    answer = models.TextField()
+    corrected_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (("category", "query_hash"),)  # Unique constraint
+        indexes = [
+            models.Index(
+                fields=["category", "query_hash"], name="category_queryhash_idx"
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        # Update the query_hash field whenever the object is saved
+        self.query_hash = hashlib.sha1(self.query.encode()).hexdigest()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Correction for {self.category.name}"

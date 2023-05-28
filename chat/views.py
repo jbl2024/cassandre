@@ -10,7 +10,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from documents.models import Category
+from documents.models import Category, Correction
 from documents.search import search_documents
 from documents.search_debug import search_documents_debug
 
@@ -105,10 +105,17 @@ def search(request, category="documents"):
                 form.cleaned_data["engine"] or "gpt-3.5-turbo"
             )  # Set the engine value to "gpt-3.5-turbo" if it is null
             history = form.cleaned_data["history"] or ""
-            results = search_documents(
-                query, history, engine, category, callback
-            )  # Use the search_documents function
-            return JsonResponse({"result": results["result"], "source_documents": []})
+            results = search_documents(query, history, engine, category, callback)
+
+            category = Category.objects.get(slug=category)
+            correction = Correction.objects.filter(
+                category_id=category.id, query=query
+            ).first()
+            correction_id = correction.id if correction is not None else None
+            response = {"result": results["result"], "source_documents": []}
+            if correction_id is not None:
+                response["correction_id"] = correction_id
+            return JsonResponse(response)
     else:
         form = SearchForm()
 
@@ -121,7 +128,7 @@ def search(request, category="documents"):
 
 
 def debug(request):
-    category_id = request.GET.get('category')
+    category_id = request.GET.get("category")
     results = ""
     if category_id:
         category = Category.objects.get(id=category_id)
@@ -129,23 +136,24 @@ def debug(request):
     else:
         form = DebugForm()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = DebugForm(request.POST)
         if form.is_valid():
-            engine = form.cleaned_data['engine']
-            category_id = form.cleaned_data['category'].id
-            prompt = form.cleaned_data['prompt']
-            k = form.cleaned_data['k']
-            query = form.cleaned_data['query']
-            raw_input = form.cleaned_data['raw_input']
-            results = search_documents_debug(engine, category_id, prompt, k, query, raw_input)
-            # Do something with the results here, if needed
+            engine = form.cleaned_data["engine"]
+            category_id = form.cleaned_data["category"].id
+            prompt = form.cleaned_data["prompt"]
+            k = form.cleaned_data["k"]
+            query = form.cleaned_data["query"]
+            raw_input = form.cleaned_data["raw_input"]
+            results = search_documents_debug(
+                engine, category_id, prompt, k, query, raw_input
+            )
 
-    return render(request, 'chat/debug.html', {'form': form, "results": results})
+    return render(request, "chat/debug.html", {"form": form, "results": results})
+
 
 class SearchAPIView(APIView):
     def post(self, request, category="documents"):
-
         form = SearchForm(request.data)
         if form.is_valid():
             query = form.cleaned_data["query"]

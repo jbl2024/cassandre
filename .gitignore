@@ -272,3 +272,6 @@ run_celery.sh
 reindex.sh
 
 .envrc.private
+
+# google auth
+*.json

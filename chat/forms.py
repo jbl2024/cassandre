@@ -21,7 +21,6 @@ class SearchForm(forms.Form):
         widget=forms.HiddenInput(), required=False
     )  # Add a hidden input field for the history
 
-
 class DebugForm(forms.ModelForm):
     ENGINE_CHOICES = [
         ("paradigm", "LightOn"),

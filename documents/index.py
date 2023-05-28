@@ -11,24 +11,27 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
 from documents.embedding import get_embedding
-from documents.models import Document, Category
+from documents.models import Document, Category, Correction
+from langchain.schema import Document as LangchainDocument
 
 
 def clean_text(text):
     # Remove duplicated consecutive spaces
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"\s+", " ", text)
 
     # Remove duplicated consecutive end of lines
-    text = re.sub(r'\n+', '\n', text)
+    text = re.sub(r"\n+", "\n", text)
 
     # Remove leading and trailing spaces
     text = text.strip()
 
     return text
 
-logger = logging.getLogger('cassandre')
 
-def index_documents(category_id):
+logger = logging.getLogger("cassandre")
+
+
+def index_documents(category_id=None):
     if category_id is None:
         categories = Category.objects.all()
     else:
@@ -63,8 +66,23 @@ def index_documents(category_id):
                     logger.info(
                         f"Successfully loaded document: {document.title or document.file}"
                     )
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=settings.SPLIT_CHUNK_SIZE, chunk_overlap=settings.SPLIT_CHUNK_OVERLAP)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=settings.SPLIT_CHUNK_SIZE,
+            chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
+        )
         texts = text_splitter.split_documents(docs)
+
+        corrections = Correction.objects.filter(category=category)
+        for correction in corrections:
+            document = LangchainDocument(
+                page_content=f"Question: {correction.query}\nRéponse: {correction.answer}",
+                metadata={
+                    "origin": f"correction manuelle",
+                    "source": f"correction-{correction.id}",
+                },
+            )
+            texts.append(document)
+
         embeddings = get_embedding()
         url = settings.QDRANT_URL
         Qdrant.from_documents(
@@ -74,5 +92,7 @@ def index_documents(category_id):
             prefer_grpc=True,
             collection_name=category.slug,
         )
-        logger.info(f"Successfully indexed {documents.count()} document(s) for category {category.name}")
+        logger.info(
+            f"Successfully indexed {documents.count()} document(s) and {corrections.count()} correction(s) for category {category.name}"
+        )
     logger.info(f"Successfully indexed all documents")
