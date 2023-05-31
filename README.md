@@ -1,7 +1,7 @@
 # cassandre
 
 ## architecture
-- django
+- django + celery (queues) + asgi (websockets)
 
 in docker
 - postgresql
@@ -24,12 +24,22 @@ Run services:
 $ make docker
 ```
 
+Apply migrations:
+```
+$ python manage.py migrate
+```
+
 Run all:
 ```
 $ ./start_all.sh
 ```
 
+
+Front:
 http://localhost:8000/search
+
+Backoffice:
+http://localhost:8000/admin
 
 ## env vars
 ```
