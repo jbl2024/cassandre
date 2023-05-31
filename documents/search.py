@@ -21,6 +21,7 @@ from paradigm_client.remote_model import RemoteModel
 from pydantic import BaseModel
 from transformers import AutoTokenizer, pipeline
 
+from documents.anonymize import Anonymizer
 from documents.embedding import get_embedding
 from documents.models import Category
 
@@ -85,6 +86,7 @@ class DocumentSearch:
         return query
 
 def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents", callback=None):
+    query = Anonymizer().anonymize(query)
     category = Category.objects.get(slug=category_slug)
 
     document_search = DocumentSearch(category=category)
