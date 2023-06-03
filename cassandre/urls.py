@@ -28,6 +28,7 @@ urlpatterns = [
     path('search/', search, name='search'),    
     path('correct/<int:category_id>/', correct, name='correct'),
     path('__internal_cas_debug__/', debug, name='debug'),    
+    path('backoffice/', include('backoffice.urls')),
 ]
 
 if settings.DEBUG:
