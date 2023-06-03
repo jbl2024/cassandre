@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_results",
     "rest_framework",
     "channels",
     "tailwind",
@@ -171,6 +172,8 @@ LOGGING = {
 
 # Use the Redis broker
 CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "django-cache"
 
 # Use the JSON serializer
 CELERY_ACCEPT_CONTENT = ["json"]
