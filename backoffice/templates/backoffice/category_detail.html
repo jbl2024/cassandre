@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+  <h1 class="text-4xl font-bold mb-4">{{ object.name }}</h1>
+  <p class="text-xl mb-2"><strong>Welcome Message:</strong> {{ object.welcome_message }}</p>
+  <p class="text-xl mb-2"><strong>Prompt:</strong> {{ object.prompt }}</p>
+  <p class="text-xl mb-2"><strong>K:</strong> {{ object.k }}</p>
+
+  <h2 class="text-3xl font-bold mb-2">Documents</h2>
+  <ul class="list-disc list-inside space-y-2">
+    {% for document in documents %}
+      <li class="text-xl">{{ document.title }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="text-3xl font-bold mb-2">Corrections</h2>
+  <ul class="list-disc list-inside space-y-2">
+    {% for correction in corrections %}
+      <li class="text-xl">{{ correction.query }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="text-3xl font-bold mb-2">Upload a File</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="mt-2 p-2 bg-blue-500 text-white">Upload</button>
+  </form>
+
+</div>
+{% endblock %}

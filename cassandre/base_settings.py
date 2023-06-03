@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "storages",
     "documents",
     "chat",
+    "backoffice",
 ]
 
 
