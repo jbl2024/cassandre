@@ -69,6 +69,10 @@ class TestAnonymizer(unittest.TestCase):
         anonymized_text = self.anonymizer.anonymize(text)
         self.assertEqual(anonymized_text, "Bonjour, je m'appelle Madame/Monsieur, mon numen est le CONFIDENTIEL")
 
+        text = "Bonjour, je m'appelle John Doe, mon email est foo@bar.com"
+        anonymized_text = self.anonymizer.anonymize(text)
+        self.assertEqual(anonymized_text, "Bonjour, je m'appelle Madame/Monsieur, mon email est private@example.com")
+
     def test_anonymize_without_named_entities(self):
         text = "Il n'y a rien à anonymiser ici"
         anonymized_text = self.anonymizer.anonymize(text)
