@@ -57,7 +57,7 @@ class DocumentSearch:
             if score < threshold:
                 continue
             doc.page_content = (
-                f"source:'{doc.metadata['origin']}'\ncontenu:{doc.page_content}"
+                f"source : {doc.metadata['origin']} - page {doc.metadata['page']}\n{doc.page_content}"
             )
             print(score)
             documents.append(doc)
@@ -105,7 +105,7 @@ def query_lighton(prompt, query, documents, raw_input):
     host_ip = os.environ["PARADIGM_HOST"]
     model = RemoteModel(host_ip, model_name="llm-mini")
 
-    context = "\n".join([doc.page_content for doc in documents])
+    context = "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
 
     if raw_input:
         prompt = "{question}{context}" + prompt
@@ -125,14 +125,16 @@ def query_lighton(prompt, query, documents, raw_input):
     prompt = prompt_template.format(context=context, question=query)
 
     token_count = len(model.tokenize(prompt).tokens)
-    logger.debug("### paradigm")
+    logger.debug("*** paradigm")
     logger.debug(f"Prompt: {prompt}")
     logger.debug(f"Number of tokens: {token_count}")
 
+    stop_words = ["\n\n", "Question:"] # List of stopping strings to use during the generation
     parameters = {
-        "n_tokens": 500,
+        "n_tokens": 100,
         "temperature": 0,
         "biases": biases,
+        "stop_regex": r"(?i)(" + "|".join(re.escape(word) for word in stop_words) + ")"
     }
 
     paradigm_result = model.create(prompt, **parameters)
@@ -155,7 +157,8 @@ def query_openai(prompt, query, documents, engine, raw_input, callback):
         template=f"Nous sommes le {formatted_date_time}.{prompt}",
     )
 
-    context = "\n".join([doc.page_content for doc in documents])
+    context = "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
+
     prompt = prompt_template.format(context=context, question=query)
     enc = tiktoken.get_encoding("cl100k_base")
     token_count = len(enc.encode(prompt))

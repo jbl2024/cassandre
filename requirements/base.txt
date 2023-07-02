@@ -36,3 +36,7 @@ google-cloud-aiplatform==1.25.0
 spacy==3.5.3
 https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.5.0/fr_core_news_sm-3.5.0.tar.gz
 pybloom-live==4.0.0
+
+# for pdf text extraction
+pdfplumber==0.9.0
+nltk==3.8.1

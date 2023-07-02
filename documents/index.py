@@ -6,13 +6,15 @@ import tempfile
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from langchain.document_loaders import UnstructuredFileLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import (PDFMinerLoader, PDFPlumberLoader,
+                                        PyPDFLoader, UnstructuredFileLoader)
+from langchain.schema import Document as LangchainDocument
+from langchain.text_splitter import (NLTKTextSplitter,
+                                     RecursiveCharacterTextSplitter)
 from langchain.vectorstores import Qdrant
 
 from documents.embedding import get_embedding
-from documents.models import Document, Category, Correction
-from langchain.schema import Document as LangchainDocument
+from documents.models import Category, Correction, Document
 
 
 def clean_text(text):
@@ -24,6 +26,10 @@ def clean_text(text):
 
     # Remove leading and trailing spaces
     text = text.strip()
+
+    # Special case for FAQ documents where each question has a "réponse" block
+    # so we add separator so that the splitter will keep question/answer together
+    text = text.replace("Question:", "\n\nQuestion:")
 
     return text
 
@@ -55,8 +61,9 @@ def index_documents(category_id=None):
                     temp_file.write(file_content)
                     temp_file.flush()
 
-                    loader = UnstructuredFileLoader(temp_file.name, mode="single")
+                    loader = PDFPlumberLoader(temp_file.name)
                     loaded_documents = loader.load()
+
                     for doc in loaded_documents:
                         doc.page_content = clean_text(doc.page_content)
                         doc.metadata["origin"] = document.title or os.path.basename(
@@ -70,6 +77,11 @@ def index_documents(category_id=None):
             chunk_size=settings.SPLIT_CHUNK_SIZE,
             chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
         )
+        # disabled for now
+        # text_splitter = NLTKTextSplitter(
+        #     chunk_size=settings.SPLIT_CHUNK_SIZE,
+        #     chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
+        # )
         texts = text_splitter.split_documents(docs)
 
         corrections = Correction.objects.filter(category=category)
@@ -79,6 +91,7 @@ def index_documents(category_id=None):
                 metadata={
                     "origin": f"correction manuelle",
                     "source": f"correction-{correction.id}",
+                    "page": 1,
                 },
             )
             texts.append(document)
