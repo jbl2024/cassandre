@@ -50,7 +50,6 @@ class DocumentSearch:
 
     def get_relevant_documents(self, query, threshold=0.80, k=6):
         query = self.normalize_query(query)
-        print(query)
         res = self.docsearch.similarity_search_with_score(query, k=self.category.k)
         documents: List[Document] = []
         for doc, score in res:
@@ -59,7 +58,6 @@ class DocumentSearch:
             doc.page_content = (
                 f"source : \"{doc.metadata['origin']}\"\ncontenu :\"{doc.page_content}\""
             )
-            print(score)
             documents.append(doc)
         return documents
 
@@ -127,10 +125,12 @@ def query_lighton(category, query, documents):
     logger.debug(f"Prompt: {prompt}")
     logger.debug(f"Number of tokens: {len(model.tokenize(prompt).tokens)}")
 
+    stop_words = ["\n\n", "\nQuestion:"] # List of stopping strings to use during the generation
     parameters = {
-        "n_tokens": 500,
+        "n_tokens": 200,
         "temperature": 0,
         "biases": biases,
+        "stop_regex": r"(?i)(" + "|".join(re.escape(word) for word in stop_words) + ")"
     }
 
     paradigm_result = model.create(prompt, **parameters)

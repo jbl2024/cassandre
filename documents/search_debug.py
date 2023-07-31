@@ -59,7 +59,6 @@ class DocumentSearch:
             doc.page_content = (
                 f"source : {doc.metadata['origin']} - page {doc.metadata['page']}\n{doc.page_content}"
             )
-            print(score)
             documents.append(doc)
         return documents
 
