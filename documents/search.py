@@ -107,7 +107,6 @@ def query_lighton(category, query, documents):
     model = RemoteModel(host_ip, model_name="llm-mini")
 
     context = "###\n".join([doc.page_content for doc in documents])
-
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
         template=category.prompt
@@ -147,7 +146,7 @@ def query_openai(category, query, documents, engine, callback):
 
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"Nous sommes le {formatted_date_time}.{category.prompt}"
+        template=f"{category.prompt}"
     )
 
     context = "\n".join([doc.page_content for doc in documents])
@@ -174,7 +173,7 @@ def query_vertexai(category, query, documents):
 
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"Nous sommes le {formatted_date_time}.{category.prompt}"
+        template=f"{category.prompt}"
     )
 
     context = "\n".join([doc.page_content for doc in documents])

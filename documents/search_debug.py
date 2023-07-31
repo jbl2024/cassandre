@@ -129,9 +129,9 @@ def query_lighton(prompt, query, documents, raw_input):
     logger.debug(f"Prompt: {prompt}")
     logger.debug(f"Number of tokens: {token_count}")
 
-    stop_words = ["\n\n", "Question:"] # List of stopping strings to use during the generation
+    stop_words = ["\n\n", "\nQuestion:"] # List of stopping strings to use during the generation
     parameters = {
-        "n_tokens": 100,
+        "n_tokens": 200,
         "temperature": 0,
         "biases": biases,
         "stop_regex": r"(?i)(" + "|".join(re.escape(word) for word in stop_words) + ")"
@@ -154,11 +154,10 @@ def query_openai(prompt, query, documents, engine, raw_input, callback):
 
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
-        template=f"Nous sommes le {formatted_date_time}.{prompt}",
+        template=f"{prompt}",
     )
 
     context = "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
-
     prompt = prompt_template.format(context=context, question=query)
     enc = tiktoken.get_encoding("cl100k_base")
     token_count = len(enc.encode(prompt))
