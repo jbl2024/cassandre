@@ -57,7 +57,7 @@ class DocumentSearch:
             if score < threshold:
                 continue
             doc.page_content = (
-                f"la source est \"{doc.metadata['origin']}\"\nLe contenu est :\"{doc.page_content}\""
+                f"source : \"{doc.metadata['origin']}\"\ncontenu :\"{doc.page_content}\""
             )
             print(score)
             documents.append(doc)
