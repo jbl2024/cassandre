@@ -23,6 +23,7 @@ class SearchForm(forms.Form):
 
 class DebugForm(forms.ModelForm):
     ENGINE_CHOICES = [
+        ("falcon", "Falcon"),
         ("paradigm", "LightOn"),
         ("gpt-3.5-turbo", "ChatGPT 3.5"),
         ("gpt-4", "ChatGPT 4"),
