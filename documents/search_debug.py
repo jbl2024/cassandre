@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import openai
 import qdrant_client
+import requests
 import tiktoken
 from django.conf import settings
 from langchain import HuggingFacePipeline
@@ -92,6 +93,8 @@ def search_documents_debug(engine, category_id, prompt, k, query, raw_input=Fals
     else:
         documents = document_search.get_relevant_documents(query)
 
+    if engine == "falcon":
+        return query_falcon(prompt, query, documents, raw_input)
     if engine == "paradigm":
         return query_lighton(prompt, query, documents, raw_input)
     elif engine == "fastchat":
@@ -107,7 +110,8 @@ def query_lighton(prompt, query, documents, raw_input):
     context = "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
 
     if raw_input:
-        prompt = "{question}{context}" + prompt
+        context = ""
+        prompt = prompt + "{question}\n{context}"
     prompt_template = PromptTemplate(
         input_variables=["question", "context"], template=prompt
     )
@@ -128,7 +132,7 @@ def query_lighton(prompt, query, documents, raw_input):
     logger.debug(f"Prompt: {prompt}")
     logger.debug(f"Number of tokens: {token_count}")
 
-    stop_words = ["\n\n", "\nQuestion:"] # List of stopping strings to use during the generation
+    stop_words = ["\n\n", "\La question est la suivante:"] # List of stopping strings to use during the generation
     parameters = {
         "n_tokens": 200,
         "temperature": 0,
@@ -141,6 +145,43 @@ def query_lighton(prompt, query, documents, raw_input):
         return {"result": paradigm_result.completions[0].output_text, "input": prompt, "token_count": token_count}
     else:
         return {"result": "No completions found"}
+
+def query_falcon(prompt, query, documents, raw_input):
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    context = "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
+
+    if raw_input:
+        context = ""
+        prompt = prompt + "{question}\n{context}"
+    
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"], template=prompt
+    )
+
+    prompt = prompt_template.format(context=context, question=query)
+    logger.debug(f"Prompt: {prompt}")
+
+    data = {
+        "system": "",
+        "messages": [prompt],
+        "max_tokens": 500,
+        "top_k": 10,
+        "top_p": 0.5
+    }
+
+    logger.debug("*** falcon")
+    logger.debug(f"Prompt: {prompt}")
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {}".format(settings.TEXT_SYNTH_API_KEY)
+    }
+
+    response = requests.post('https://api.textsynth.com/v1/engines/falcon_40B-chat/chat', headers=headers, json=data)
+    response_json = response.json()
+    return {"result": response_json['text'], "input": prompt}
 
 
 def query_openai(prompt, query, documents, engine, raw_input, callback):

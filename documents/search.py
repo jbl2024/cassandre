@@ -8,6 +8,7 @@ from typing import List, Optional
 import openai
 import qdrant_client
 import tiktoken
+import requests
 from django.conf import settings
 from langchain import HuggingFacePipeline
 from langchain.chains import RetrievalQA
@@ -56,7 +57,7 @@ class DocumentSearch:
             if score < threshold:
                 continue
             doc.page_content = (
-                f"source : \"{doc.metadata['origin']}\"\ncontenu :\"{doc.page_content}\""
+                f"source : {doc.metadata['origin']} - page {doc.metadata['page']}\n{doc.page_content}"
             )
             documents.append(doc)
         return documents
@@ -90,6 +91,8 @@ def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="docu
     document_search = DocumentSearch(category=category)
     documents = document_search.get_relevant_documents(query)
 
+    if engine == "falcon":
+        return query_falcon(category, query, documents)
     if engine == "paradigm":
         return query_lighton(category, query, documents)
     elif engine == "fastchat":
@@ -166,6 +169,37 @@ def query_openai(category, query, documents, engine, callback):
 
     results = qa({"query": query}, return_only_outputs=True)
     return results
+
+def query_falcon(category, query, documents):
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"],
+        template=f"{category.prompt}"
+    )
+
+    context = "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
+    prompt = prompt_template.format(context=context, question=query)
+    logger.debug(f"Prompt: {prompt}")
+
+    data = {
+        "system": "",
+        "messages": [prompt],
+        "max_tokens": 500,
+        "top_k": 10,
+        "top_p": 0.5
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {}".format(settings.TEXT_SYNTH_API_KEY)
+    }
+
+    response = requests.post('https://api.textsynth.com/v1/engines/falcon_40B-chat/chat', headers=headers, json=data)
+    response_json = response.json()
+    return {"result": response_json['text']}
+
 
 def query_vertexai(category, query, documents):
     now = datetime.now()
