@@ -57,7 +57,8 @@ class DocumentSearch:
             if score < threshold:
                 continue
             doc.page_content = (
-                f"source : {doc.metadata['origin']} - page {doc.metadata['page']}\n{doc.page_content}"
+                f"{doc.page_content}\nsource: {doc.metadata['origin']} - page {doc.metadata['page']}\n"
+                f"source: {doc.metadata['origin']} - page {doc.metadata['page']}\n{doc.page_content}"
             )
             documents.append(doc)
         return documents
@@ -184,7 +185,7 @@ def query_falcon(category, query, documents):
     logger.debug(f"Prompt: {prompt}")
 
     data = {
-        "system": "",
+        "system": "Only respond if the answer is contained in the text above",
         "messages": [prompt],
         "max_tokens": 500,
         "top_k": 10,
