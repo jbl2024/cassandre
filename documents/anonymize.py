@@ -3,7 +3,7 @@ import spacy
 from pybloom_live import BloomFilter
 
 class Anonymizer:
-    def __init__(self, model='fr_core_news_sm', capacity=1000000, error_rate=0.1):
+    def __init__(self, model='fr_core_news_lg', capacity=1000000, error_rate=0.1):
         self.nlp = spacy.load(model)
         self.filter = BloomFilter(capacity=capacity, error_rate=error_rate)
 

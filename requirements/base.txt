@@ -35,6 +35,7 @@ google-cloud-aiplatform==1.25.0
 # for anonymization
 spacy==3.5.3
 https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.5.0/fr_core_news_sm-3.5.0.tar.gz
+https://github.com/explosion/spacy-models/releases/download/fr_core_news_lg-3.5.0/fr_core_news_lg-3.5.0.tar.gz
 pybloom-live==4.0.0
 
 # for pdf text extraction
