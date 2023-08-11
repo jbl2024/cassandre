@@ -188,6 +188,7 @@ def query_falcon(category, query, documents):
         "system": "Only respond if the answer is contained in the text above",
         "messages": [prompt],
         "max_tokens": 500,
+        "temperature": 0.2,
         "top_k": 10,
         "top_p": 0.5
     }

@@ -167,6 +167,7 @@ def query_falcon(prompt, query, documents, raw_input):
         "system": "",
         "messages": [prompt],
         "max_tokens": 500,
+        "temperature": 0.2,
         "top_k": 10,
         "top_p": 0.5
     }
