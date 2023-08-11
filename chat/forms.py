@@ -53,3 +53,23 @@ class DebugForm(forms.ModelForm):
             self.fields["prompt"].initial = self.instance.prompt
             self.fields["k"].initial = self.instance.k
         self.order_fields(["category", "prompt", "k", "engine", "raw_input", "query"])
+
+class DebugVectorForm(forms.ModelForm):
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        widget=forms.Select(attrs={"id": "category-select"}),
+    )
+    query = forms.CharField(required=False,
+        widget=forms.Textarea(attrs={"style": "font-family:monospace;", "cols": "120", "rows": "4"})
+    )
+
+    class Meta:
+        model = Category
+        fields = ["k", "query"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.fields["category"].initial = self.instance.id
+            self.fields["k"].initial = self.instance.k
+        self.order_fields(["category", "k", "query"])

@@ -12,9 +12,9 @@ from rest_framework.views import APIView
 
 from documents.models import Category, Correction
 from documents.search import search_documents
-from documents.search_debug import search_documents_debug
+from documents.search_debug import DocumentSearch, search_documents_debug
 
-from .forms import DebugForm, SearchForm
+from .forms import DebugForm, DebugVectorForm, SearchForm
 from .global_registry import websockets
 
 
@@ -151,6 +151,27 @@ def debug(request):
 
     return render(request, "chat/debug.html", {"form": form, "results": results})
 
+def debug_vector(request):
+    category_id = request.GET.get("category")
+    documents = []
+    if category_id:
+        category = Category.objects.get(id=category_id)
+        form = DebugVectorForm(instance=category)
+    else:
+        form = DebugVectorForm()
+
+    if request.method == "POST":
+        form = DebugVectorForm(request.POST)
+        if form.is_valid():
+            k = form.cleaned_data["k"]
+            category_id = form.cleaned_data["category"].id
+            query = form.cleaned_data["query"]
+
+            category = Category.objects.get(id=category_id)
+            document_search = DocumentSearch(category=category, k=k)
+            documents = document_search.get_relevant_documents(query)
+
+    return render(request, "chat/debug_vector.html", {"form": form, "documents": documents})
 
 class SearchAPIView(APIView):
     def post(self, request, category="documents"):
