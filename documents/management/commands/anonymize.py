@@ -10,24 +10,14 @@ from documents.models import Category
 from documents.search import DocumentSearch
 
 class Command(BaseCommand):
-    help = 'Search inside vector DB'
+    help = 'Anonymize text'
 
     def add_arguments(self, parser):
         parser.add_argument('query', type=str, help='The query string')
-        parser.add_argument(
-            "category_slug", type=str, help="Indicates the slug of the category"
-        )
 
     def handle(self, *args, **options):
         query = options['query']        
-        category_slug = options["category_slug"]
+        anonymized_query = Anonymizer().anonymize(query)
 
-        self.stdout.write("Category slug: %s" % category_slug)
-
-        query = Anonymizer().anonymize(query)
-        category = Category.objects.get(slug=category_slug)
-
-        document_search = DocumentSearch(category=category)
-        documents = document_search.get_relevant_documents(query)
-        for doc in documents:
-            self.stdout.write(doc.page_content)
+        self.stdout.write(anonymized_query)
+        

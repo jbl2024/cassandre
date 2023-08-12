@@ -14,11 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from chat.views import search, debug, SearchAPIView
+from django.contrib import admin
+from django.urls import include, path
+
+from chat.views import SearchAPIView, debug, debug_vector, search
 from documents.views import correct
 
 urlpatterns = [
@@ -28,6 +29,7 @@ urlpatterns = [
     path('search/', search, name='search'),    
     path('correct/<int:category_id>/', correct, name='correct'),
     path('__internal_cas_debug__/', debug, name='debug'),    
+    path('__internal_cas_debug_vector__/', debug_vector, name='debug_vector'),    
     path('backoffice/', include('backoffice.urls')),
 ]
 

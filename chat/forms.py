@@ -23,8 +23,10 @@ class SearchForm(forms.Form):
 
 class DebugForm(forms.ModelForm):
     ENGINE_CHOICES = [
+        ("falcon", "Falcon"),
         ("paradigm", "LightOn"),
         ("gpt-3.5-turbo", "ChatGPT 3.5"),
+        ("gpt-4", "ChatGPT 4"),
         # ...
     ]
     engine = forms.ChoiceField(choices=ENGINE_CHOICES)
@@ -51,3 +53,23 @@ class DebugForm(forms.ModelForm):
             self.fields["prompt"].initial = self.instance.prompt
             self.fields["k"].initial = self.instance.k
         self.order_fields(["category", "prompt", "k", "engine", "raw_input", "query"])
+
+class DebugVectorForm(forms.ModelForm):
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        widget=forms.Select(attrs={"id": "category-select"}),
+    )
+    query = forms.CharField(required=False,
+        widget=forms.Textarea(attrs={"style": "font-family:monospace;", "cols": "120", "rows": "4"})
+    )
+
+    class Meta:
+        model = Category
+        fields = ["k", "query"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.fields["category"].initial = self.instance.id
+            self.fields["k"].initial = self.instance.k
+        self.order_fields(["category", "k", "query"])
