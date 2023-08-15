@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.utils.text import slugify
 
 from .models import Category, Correction, Document
-
+from .chunk import split_markdown
 
 class CategoryModelTest(TestCase):
 
@@ -77,3 +77,55 @@ class TestAnonymizer(unittest.TestCase):
         text = "Il n'y a rien à anonymiser ici"
         anonymized_text = self.anonymizer.anonymize(text)
         self.assertEqual(anonymized_text, text)
+
+
+class SplitMarkdownTestCase(TestCase):
+
+    def test_extract_sections_basic(self):
+        text = """
+        # Title1
+        This is a content under Title1.
+        Another content
+
+        ## SubTitle1
+        This is a content under SubTitle1.
+        """
+
+        sections = split_markdown(text)
+        expected_output = [
+            "Title1\nThis is a content under Title1.\nAnother content",
+            "Title1 > SubTitle1\nThis is a content under SubTitle1."
+        ]
+
+        self.assertEqual(sections, expected_output)
+
+    def test_extract_sections_advanced(self):
+        text = """
+        # Stagiaires
+
+        Réf.: BOEN n°6 du 28-10-2021 – Lignes directrices de gestion académiques
+
+        ## 3.3.3.4. Stagiaires n'ayant ni la qualité d'ex-fonctionnaire ni celle d'ex-contractuel de I'EN
+
+        ### 3.3.3.4.1. Conditions a remplir
+
+        Deux bonifications
+
+        ### 3.3.3.4.2. Bonifications
+
+        Test
+        
+        ## 3.3.3.5. Divers
+
+        Divers
+        """
+
+        sections = split_markdown(text)
+        expected_output = [
+            "Stagiaires\nRéf.: BOEN n°6 du 28-10-2021 – Lignes directrices de gestion académiques",
+            "Stagiaires > 3.3.3.4. Stagiaires n'ayant ni la qualité d'ex-fonctionnaire ni celle d'ex-contractuel de I'EN > 3.3.3.4.1. Conditions a remplir\nDeux bonifications",
+            "Stagiaires > 3.3.3.4. Stagiaires n'ayant ni la qualité d'ex-fonctionnaire ni celle d'ex-contractuel de I'EN > 3.3.3.4.2. Bonifications\nTest",
+            "Stagiaires > 3.3.3.5. Divers\nDivers"
+        ]
+
+        self.assertEqual(sections, expected_output)        

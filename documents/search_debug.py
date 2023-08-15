@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from transformers import pipeline
 
 from documents.anonymize import Anonymizer
-from documents.embedding import get_embedding
+from documents.embedding import get_embedding, get_query_prefix
 from documents.models import Category
 
 logger = logging.getLogger("cassandre")
@@ -42,9 +42,11 @@ class DocsRetriever(BaseRetriever, BaseModel):
 
 class DocumentSearch:
     def __init__(self, category, k):
+        self.abbreviation_dict = {"sft": "supplément familial de traitement", "iff": "indemnité forfaitaire de formation"}
         self.category = category
         self.k = k
         self.embeddings = get_embedding()
+        self.query_prefix = get_query_prefix()
         url = settings.QDRANT_URL
         self.client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
         self.docsearch = Qdrant(
@@ -52,13 +54,18 @@ class DocumentSearch:
         )
 
     def get_relevant_documents(self, query, threshold=0.80, k=6):
+        query = self.normalize_query(query)
         res = self.docsearch.similarity_search_with_score(query, k=self.k)
         documents: List[Document] = []
         for doc, score in res:
             if score < threshold:
                 continue
+
+            page = doc.metadata.get("page", "")
+            source = doc.metadata.get("origin", "")
+
             doc.page_content = (
-                f"{doc.page_content}\nsource: {doc.metadata['origin']} - page {doc.metadata['page']}\n"
+                f"{doc.page_content}\nsource: {source} - page {page} - score {score}\n"
             )
             documents.append(doc)
         return documents
@@ -81,6 +88,12 @@ class DocumentSearch:
         )
 
         return response["choices"][0]["message"]["content"]
+
+    def normalize_query(self, query):
+        query = query.lower()
+        for abbr, full_form in self.abbreviation_dict.items():
+            query = re.sub(fr'\b{abbr}\b', f'{abbr} ({full_form})', query)
+        return f"{self.query_prefix}{query}"
 
 
 def search_documents_debug(engine, category_id, prompt, k, query, raw_input=False, callback=None):
