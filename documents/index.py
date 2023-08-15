@@ -3,31 +3,29 @@ import logging
 import os
 import re
 import tempfile
-import qdrant_client
 
+import qdrant_client
 from django.conf import settings
-from .chunk import split_markdown
 from django.core.files.storage import default_storage
-from langchain.document_loaders import (
-    PDFMinerLoader,
-    PDFPlumberLoader,
-    PyPDFLoader,
-    UnstructuredFileLoader,
-    UnstructuredMarkdownLoader,
-    TextLoader
-)
+from langchain.document_loaders import (PDFMinerLoader, PDFPlumberLoader,
+                                        PyPDFLoader, TextLoader,
+                                        UnstructuredFileLoader,
+                                        UnstructuredMarkdownLoader)
 from langchain.schema import Document as LangchainDocument
-from langchain.text_splitter import NLTKTextSplitter, RecursiveCharacterTextSplitter, MarkdownTextSplitter
+from langchain.text_splitter import (MarkdownTextSplitter, NLTKTextSplitter,
+                                     RecursiveCharacterTextSplitter,
+                                     SpacyTextSplitter)
 from langchain.vectorstores import Qdrant
 
 from documents.embedding import get_embedding
 from documents.models import Category, Correction, Document
 
+from .chunk import split_markdown
+
 
 def clean_text(text, full=True):
     # Remove duplicated consecutive spaces
     if full is True:
-
         # Remove duplicated consecutive end of lines
         text = re.sub(r"\n+", "\n", text)
 
@@ -46,7 +44,12 @@ logger = logging.getLogger("cassandre")
 
 
 def get_categories(category_id=None):
-    return Category.objects.all() if category_id is None else Category.objects.filter(id=category_id)
+    return (
+        Category.objects.all()
+        if category_id is None
+        else Category.objects.filter(id=category_id)
+    )
+
 
 def load_and_split_pdf(temp_file, document):
     """
@@ -62,11 +65,13 @@ def load_and_split_pdf(temp_file, document):
     loader = PDFPlumberLoader(temp_file.name)
     loaded_documents = process_loaded_documents(loader.load(), document)
 
-    text_splitter = RecursiveCharacterTextSplitter(
+    text_splitter = SpacyTextSplitter(
+        pipeline="fr_core_news_lg",
         chunk_size=settings.SPLIT_CHUNK_SIZE,
         chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
     )
     return text_splitter.split_documents(loaded_documents)
+
 
 def load_and_split_md(temp_file, document):
     """
@@ -89,12 +94,16 @@ def load_and_split_md(temp_file, document):
 
     """
     loader = TextLoader(temp_file.name)
-    loaded_documents = process_loaded_documents(loader.load(), document, full_clean=False)
+    loaded_documents = process_loaded_documents(
+        loader.load(), document, full_clean=False
+    )
     splitted_docs = []
     for doc in loaded_documents:
         items = split_markdown(doc.page_content)
         for item in items:
-            splitted_docs.append(LangchainDocument(page_content=item, metadata=doc.metadata))
+            splitted_docs.append(
+                LangchainDocument(page_content=item, metadata=doc.metadata)
+            )
 
     return splitted_docs
     # text_splitter = MarkdownTextSplitter(
@@ -102,6 +111,7 @@ def load_and_split_md(temp_file, document):
     #     chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
     # )
     # return text_splitter.split_documents(loaded_documents)
+
 
 def process_loaded_documents(loaded_documents, document, full_clean=True):
     """
@@ -118,6 +128,7 @@ def process_loaded_documents(loaded_documents, document, full_clean=True):
         doc.page_content = clean_text(doc.page_content, full_clean)
         doc.metadata["origin"] = document.title or os.path.basename(document.file.name)
     return loaded_documents
+
 
 def index_documents(category_id=None):
     """
@@ -136,7 +147,9 @@ def index_documents(category_id=None):
                 file_content = file.read()
                 file_ext = os.path.splitext(document.file.name)[-1]
 
-                with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as temp_file:
+                with tempfile.NamedTemporaryFile(
+                    suffix=file_ext, delete=False
+                ) as temp_file:
                     logger.info(f"Loading: {document.title or document.file}")
                     temp_file.write(file_content)
                     temp_file.flush()
@@ -146,7 +159,9 @@ def index_documents(category_id=None):
                     elif file_ext == ".md":
                         texts.extend(load_and_split_md(temp_file, document))
 
-                    logger.info(f"Successfully loaded document: {document.title or document.file}")
+                    logger.info(
+                        f"Successfully loaded document: {document.title or document.file}"
+                    )
 
         corrections = Correction.objects.filter(category=category)
         for correction in corrections:
