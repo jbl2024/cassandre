@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer, pipeline
 
 from documents.anonymize import Anonymizer
-from documents.embedding import get_embedding
+from documents.embedding import get_embedding, get_query_prefix
 from documents.models import Category
 
 logger = logging.getLogger("cassandre")
@@ -45,6 +45,7 @@ class DocumentSearch:
         self.abbreviation_dict = {"sft": "supplément familial de traitement", "iff": "indemnité forfaitaire de formation"}
         self.category = category
         self.embeddings = get_embedding()
+        self.query_prefix = get_query_prefix()
         url = settings.QDRANT_URL
         self.client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
         self.docsearch = Qdrant(self.client, self.category.slug, self.embeddings.embed_query)
@@ -56,9 +57,11 @@ class DocumentSearch:
         for doc, score in res:
             if score < threshold:
                 continue
+            page = doc.metadata.get("page", "")
+            source = doc.metadata.get("origin", "")
+            
             doc.page_content = (
-                f"{doc.page_content}\nsource: {doc.metadata['origin']} - page {doc.metadata['page']}\n"
-                f"source: {doc.metadata['origin']} - page {doc.metadata['page']}\n{doc.page_content}"
+                f"{doc.page_content}\nsource: {source} - page {page}\n"
             )
             documents.append(doc)
         return documents
@@ -83,7 +86,7 @@ class DocumentSearch:
         query = query.lower()
         for abbr, full_form in self.abbreviation_dict.items():
             query = re.sub(fr'\b{abbr}\b', f'{abbr} ({full_form})', query)
-        return query
+        return f"{self.query_prefix}{query}"
 
 def search_documents(query, history, engine="gpt-3.5-turbo", category_slug="documents", callback=None):
     query = Anonymizer().anonymize(query)
