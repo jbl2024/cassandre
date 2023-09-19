@@ -1,6 +1,6 @@
 Django==4.2.1
 django-zipfile==0.4.0
-langchain==0.0.262
+langchain==0.0.295
 unstructured==0.6.2
 pdfminer.six==20221105
 qdrant-client==1.1.6

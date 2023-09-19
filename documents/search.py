@@ -13,6 +13,7 @@ from django.conf import settings
 from langchain import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.llms import VertexAI
 from langchain.prompts import PromptTemplate
@@ -164,8 +165,13 @@ def query_openai(category, query, documents, engine, callback):
 
     callbacks = [callback] if callback is not None else []
 
+    if engine == "gpt-3.5-turbo-instruct":
+        llm = OpenAI(streaming=True, temperature=0, model_name=engine, callbacks=callbacks)
+    else:
+        llm = ChatOpenAI(streaming=True, temperature=0, model_name=engine, callbacks=callbacks)
+
     qa = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(streaming=True, temperature=0, model_name=engine, callbacks=callbacks),
+        llm=llm,
         chain_type="stuff",
         retriever=DocsRetriever(documents=documents),
     )
