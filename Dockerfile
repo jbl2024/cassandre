@@ -14,6 +14,7 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    locales \
     build-essential \
     libpq-dev \
     git \
@@ -21,11 +22,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# locale
-RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
-    && echo "fr_FR.UTF-8 UTF-8" > /etc/locale.gen && locale-gen fr_FR.UTF-8 \
-    && dpkg-reconfigure locales \
-    && /usr/sbin/update-locale LANG=fr_FR.UTF-8
+# Generate fr_FR.UTF-8 locale
+RUN sed -i '/fr_FR.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+
+# Set fr_FR.UTF-8 as the default locale
+ENV LANG fr_FR.UTF-8  
+ENV LANGUAGE fr_FR:fr  
+ENV LC_ALL fr_FR.UTF-8  
 
 # Install Python dependencies
 COPY requirements/base.txt /app/requirements/base.txt
