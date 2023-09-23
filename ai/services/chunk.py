@@ -34,9 +34,7 @@ def split_markdown(markdown_text):
                 full_title = " > ".join(titles)
                 paragraph_content = "\n".join(current_paragraph).strip()
                 if paragraph_content:  # Make sure it's not just whitespace
-                    paragraphs_with_titles.append(
-                        "{}\n{}".format(full_title, paragraph_content)
-                    )
+                    paragraphs_with_titles.append(f"{full_title}\n{paragraph_content}")
                 current_paragraph = []
 
             # Update the titles
