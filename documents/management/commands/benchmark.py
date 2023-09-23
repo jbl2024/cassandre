@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand, CommandError
 import pandas as pd
 from documents.search import search_documents
 
-
 class Command(BaseCommand):
     help = "Run a query for a specific category and engines from an Excel file"
 
@@ -14,17 +13,22 @@ class Command(BaseCommand):
         parser.add_argument(
             "engines", nargs="+", type=str, help="List of engines to be used"
         )
+        parser.add_argument(
+            "--skip", type=int, default=0, help="Number of rows to skip from the start of the Excel file"
+        )
 
     def handle(self, *args, **options):
         category_slug = options["category_slug"]
         excel_file = options["excel_file"]
         engines = options["engines"]
+        skip_rows = options["skip"]
 
         self.stdout.write("Category ID: %s" % category_slug)
         self.stdout.write("Excel file: %s" % excel_file)
         self.stdout.write("Engines: %s" % ", ".join(engines))
+        self.stdout.write("Skip: %d" % skip_rows)
 
-        df = pd.read_excel(excel_file)
+        df = pd.read_excel(excel_file, skiprows=skip_rows)
         total_rows = len(df.index)
 
         # Iterate over each row in the DataFrame
@@ -46,7 +50,6 @@ class Command(BaseCommand):
             self.stdout.write("Progress: {:.2f}%".format(progress))
             # Write the DataFrame to a new Excel file
             df.to_excel("output.xlsx", index=False)
-
 
         # Write the DataFrame to a new Excel file
         df.to_excel("output.xlsx", index=False)
