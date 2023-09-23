@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 import pandas as pd
-from documents.search import search_documents
+from ai.services.search_service import search_documents
 
 class Command(BaseCommand):
     help = "Run a query for a specific category and engines from an Excel file"

@@ -11,8 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from documents.models import Category, Correction
-from documents.search import search_documents
-from documents.search_debug import DocumentSearch, search_documents_debug
+from ai.services.search_service import search_documents, DocumentSearch
 
 from .forms import DebugForm, DebugVectorForm, SearchForm
 from .global_registry import websockets
@@ -87,14 +86,20 @@ class StreamingCallbackHandler(BaseCallbackHandler):
         """Run on agent end."""
 
 
-def document_to_dict(document):
-    return {
-        "page_content": document.page_content,
-        "metadata": document.metadata,
-    }
+def search(request, category_slug="documents"):
+    """
+    This function handles the search request. It takes in a request and a category_slug as parameters.
+    If the request method is POST, it processes the search query and returns the search results in a JsonResponse.
+    If the request method is not POST, it renders the search form.
 
+    Parameters:
+    request (HttpRequest): The search request.
+    category_slug (str): The category to search in. Default is "documents".
 
-def search(request, category="documents"):
+    Returns:
+    JsonResponse: The search results if the request method is POST.
+    HttpResponse: The search form if the request method is not POST.
+    """
     if request.method == "POST":
         session_id = request.POST.get("session_id")
         callback = StreamingCallbackHandler(session_id)
@@ -104,10 +109,11 @@ def search(request, category="documents"):
             engine = (
                 form.cleaned_data["engine"] or "gpt-3.5-turbo"
             )  # Set the engine value to "gpt-3.5-turbo" if it is null
-            history = form.cleaned_data["history"] or ""
-            results = search_documents(query, history, engine, category, callback)
+            results = search_documents(
+                query, engine, category_slug, prompt=None, k=None, callback=callback
+            )
 
-            category = Category.objects.get(slug=category)
+            category = Category.objects.get(slug=category_slug)
             correction = Correction.objects.filter(
                 category_id=category.id, query=query
             ).first()
@@ -119,7 +125,7 @@ def search(request, category="documents"):
     else:
         form = SearchForm()
 
-    category = Category.objects.get(slug=category)
+    category = Category.objects.get(slug=category_slug)
     return render(
         request,
         "chat/search.html",
@@ -128,6 +134,17 @@ def search(request, category="documents"):
 
 
 def debug(request):
+    """
+    This function handles the debug request. It takes in a request as a parameter.
+    If the request method is POST, it processes the debug query and returns the debug results.
+    If the request method is not POST, it renders the debug form.
+
+    Parameters:
+    request (HttpRequest): The debug request.
+
+    Returns:
+    HttpResponse: The debug form if the request method is not POST.
+    """
     category_id = request.GET.get("category")
     results = ""
     if category_id:
@@ -140,16 +157,14 @@ def debug(request):
         form = DebugForm(request.POST)
         if form.is_valid():
             engine = form.cleaned_data["engine"]
-            category_id = form.cleaned_data["category"].id
+            category_slug = form.cleaned_data["category"].slug
             prompt = form.cleaned_data["prompt"]
             k = form.cleaned_data["k"]
             query = form.cleaned_data["query"]
-            raw_input = form.cleaned_data["raw_input"]
-            results = search_documents_debug(
-                engine, category_id, prompt, k, query, raw_input
-            )
+            results = search_documents(query, engine, category_slug, prompt, k)
 
     return render(request, "chat/debug.html", {"form": form, "results": results})
+
 
 def debug_vector(request):
     category_id = request.GET.get("category")
@@ -171,16 +186,18 @@ def debug_vector(request):
             document_search = DocumentSearch(category=category, k=k)
             documents = document_search.get_relevant_documents(query)
 
-    return render(request, "chat/debug_vector.html", {"form": form, "documents": documents})
+    return render(
+        request, "chat/debug_vector.html", {"form": form, "documents": documents}
+    )
+
 
 class SearchAPIView(APIView):
-    def post(self, request, category="documents"):
+    def post(self, request, category_slug="documents"):
         form = SearchForm(request.data)
         if form.is_valid():
             query = form.cleaned_data["query"]
             engine = form.cleaned_data["engine"] or "gpt-3.5-turbo"
-            history = form.cleaned_data["history"] or ""
-            results = search_documents(query, history, engine, category)
+            results = search_documents(query, engine, category_slug)
 
             return Response({"result": results["result"], "source_documents": []})
 
