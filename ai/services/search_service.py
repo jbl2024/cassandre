@@ -244,15 +244,12 @@ def query_openai(prompt, query, documents, engine, callback):
     now = datetime.now()
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
-    print("###################################")
-    print(prompt)
-
     prompt_template = PromptTemplate(
         input_variables=["question", "context"],
         template=f"Nous sommes le {formatted_date_time}\n{prompt}",
     )
 
-    context = "\n".join([doc.page_content for doc in documents])
+    context = "###\n".join([doc.page_content for doc in documents])
     prompt = prompt_template.format(context=context, question=query)
     enc = tiktoken.get_encoding("cl100k_base")
     token_count = len(enc.encode(prompt))
