@@ -5,14 +5,17 @@ from pybloom_live import BloomFilter
 
 class Anonymizer:
     """
-    This class is used to anonymize sensitive information in a text. It uses a Bloom Filter 
+    This class is used to anonymize sensitive information in a text. It uses a Bloom Filter
     to store the named entities found in the text and replaces them with a generic placeholder.
-    It also anonymizes email addresses, phone numbers, and NUMEN numbers by replacing 
+    It also anonymizes email addresses, phone numbers, NUMEN numbers, and INSEE numbers by replacing
     them with a placeholder.
     """
 
     def __init__(
-        self, model_name="Jean-Baptiste/camembert-ner-with-dates", capacity=1000000, error_rate=0.1
+        self,
+        model_name="Jean-Baptiste/camembert-ner-with-dates",
+        capacity=1000000,
+        error_rate=0.1,
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForTokenClassification.from_pretrained(model_name)
@@ -65,7 +68,7 @@ class Anonymizer:
         Returns:
             str: The anonymized text.
         """
-        phone_number_pattern = r"\b0\d(\s|\.)?(\d{2}(\s|\.)?){4}\b"
+        phone_number_pattern = r"\b0\d(?:[\s.-]?\d{2}){4}\b"
         anonymized_text = re.sub(phone_number_pattern, placeholder, text)
         return anonymized_text
 
@@ -86,10 +89,28 @@ class Anonymizer:
         anonymized_text = re.sub(numen_pattern, placeholder, text)
         return anonymized_text
 
+    def anonymize_insee(self, text, placeholder="CONFIDENTIEL"):
+        """
+        This method anonymizes the INSEE
+        (Institut national de la statistique et des études économiques)
+        numbers found in the text by replacing them with a placeholder.
+
+        Args:
+            text (str): The text to anonymize.
+            placeholder (str): The placeholder to replace the INSEE numbers with.
+            Defaults to "CONFIDENTIEL".
+
+        Returns:
+            str: The anonymized text.
+        """
+        insee_pattern = r"(\d{15})"
+        anonymized_text = re.sub(insee_pattern, placeholder, text)
+        return anonymized_text
+
     def anonymize(self, text):
         """
         This method anonymizes the text by replacing named entities, phone numbers,
-        NUMEN numbers, and email addresses with placeholders.
+        NUMEN numbers, INSEE numbers, and email addresses with placeholders.
 
         Args:
             text (str): The text to anonymize.
@@ -97,23 +118,26 @@ class Anonymizer:
         Returns:
             str: The anonymized text.
         """
-        entities = self.nlp(text)
+
+        # Anonymize phone numbers
+        anonymized_text = self.anonymize_phone_numbers(text)
+
+        # Anonymize NUMEN numbers
+        anonymized_text = self.anonymize_numen(anonymized_text)
+
+        # Anonymize INSEE numbers
+        anonymized_text = self.anonymize_insee(anonymized_text)
+
+        # Anonymize email addresses
+        anonymized_text = self.anonymize_email(anonymized_text)
+
+        entities = self.nlp(anonymized_text)
         self.add_to_filter(entities)
 
-        anonymized_text = text
         for entity in entities:
             if entity["word"] in self.filter:
                 anonymized_text = anonymized_text.replace(
                     entity["word"], "Madame/Monsieur"
                 )
-
-        # Anonymize phone numbers
-        anonymized_text = self.anonymize_phone_numbers(anonymized_text)
-
-        # Anonymize NUMEN numbers
-        anonymized_text = self.anonymize_numen(anonymized_text)
-
-        # Anonymize email addresses
-        anonymized_text = self.anonymize_email(anonymized_text)
 
         return anonymized_text
