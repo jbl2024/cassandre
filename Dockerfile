@@ -23,8 +23,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # locale
 RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
-    && locale-gen \
-    && update-locale LANG=fr_FR.UTF-8
+    && echo "fr_FR.UTF-8 UTF-8" > /etc/locale.gen && locale-gen fr_FR.UTF-8 \
+    && dpkg-reconfigure locales \
+    && /usr/sbin/update-locale LANG=fr_FR.UTF-8
 
 # Install Python dependencies
 COPY requirements/base.txt /app/requirements/base.txt
