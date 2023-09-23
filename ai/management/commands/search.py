@@ -1,10 +1,10 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 import qdrant_client
-from documents.embedding import get_embedding
-from documents.index import index_documents
+from ai.services.embedding import get_embedding
+from ai.services.index_service import index_documents
 from langchain.vectorstores import Qdrant
-from documents.search import search_documents
+from ai.services.search_service import search_documents
 
 class Command(BaseCommand):
     help = 'Search inside VectorDB and call LLM for final result'

@@ -38,7 +38,6 @@ class DebugForm(forms.ModelForm):
     prompt = forms.CharField(
         widget=forms.Textarea(attrs={"style": "font-family:monospace;", "cols": "120"})
     )
-    raw_input = forms.BooleanField(required=False)
     query = forms.CharField(required=False,
         widget=forms.Textarea(attrs={"style": "font-family:monospace;", "cols": "120", "rows": "4"})
     )

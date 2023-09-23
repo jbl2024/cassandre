@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "tailwind",
     "theme",
     "storages",
+    "common",
+    "ai",
     "documents",
     "chat",
     "backoffice",

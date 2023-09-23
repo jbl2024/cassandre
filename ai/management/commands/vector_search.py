@@ -1,28 +1,30 @@
-from django.conf import settings
 from django.core.management.base import BaseCommand
-import qdrant_client
-from documents.anonymize import Anonymizer
-from documents.embedding import get_embedding
-from documents.index import index_documents
-from langchain.vectorstores import Qdrant
 
+from ai.services.anonymize_service import Anonymizer
 from documents.models import Category
-from documents.search import DocumentSearch
+from ai.services.search_service import DocumentSearch
+
 
 class Command(BaseCommand):
-    help = 'Search inside vector DB'
+    """
+    This is the Command class for the management command 'vector_search'.
+    It provides a command-line interface to search inside the vector database.
+    It takes a query string and a category slug as arguments.
+    """
+
+    help = "Search inside vector DB"
 
     def add_arguments(self, parser):
-        parser.add_argument('query', type=str, help='The query string')
+        parser.add_argument("query", type=str, help="The query string")
         parser.add_argument(
             "category_slug", type=str, help="Indicates the slug of the category"
         )
 
     def handle(self, *args, **options):
-        query = options['query']        
+        query = options["query"]
         category_slug = options["category_slug"]
 
-        self.stdout.write("Category slug: %s" % category_slug)
+        self.stdout.write(f"Category slug: {category_slug}")
 
         query = Anonymizer().anonymize(query)
         category = Category.objects.get(slug=category_slug)
