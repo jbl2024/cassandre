@@ -48,6 +48,8 @@ RUN python manage.py tailwind build
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
+# Copy ML models
+RUN transformers-cli download "Jean-Baptiste/camembert-ner-with-dates"
 
 # Copy Nginx configuration
 COPY caprover/nginx.conf /etc/nginx/conf.d/default.conf
