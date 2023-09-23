@@ -3,22 +3,15 @@ import os
 import re
 import tempfile
 
-import qdrant_client
 from django.conf import settings
 from django.core.files.storage import default_storage
-from langchain.document_loaders import (
-    PDFPlumberLoader,
-    TextLoader,
-)
+from langchain.document_loaders import PDFPlumberLoader, TextLoader
 from langchain.schema import Document as LangchainDocument
-from langchain.text_splitter import (
-    SpacyTextSplitter,
-)
-from langchain.vectorstores import Qdrant
+from langchain.text_splitter import SpacyTextSplitter
 
-from ai.services.embedding import get_embedding
 from documents.models import Category, Correction, Document
 
+from . import vector_database_service
 from .chunk import split_markdown
 
 logger = logging.getLogger("cassandre")
@@ -189,17 +182,7 @@ def index_documents(category_id=None):
             )
             texts.append(document)
 
-        embeddings = get_embedding()
-        url = settings.QDRANT_URL
-        client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
-        client.delete_collection(category.slug)
-        Qdrant.from_documents(
-            documents=texts,
-            embedding=embeddings,
-            url=url,
-            prefer_grpc=True,
-            collection_name=category.slug,
-        )
+        vector_database_service.create_collection(category.slug, texts)
 
         logger.info(
             "Successfully indexed %s document(s) and %s correction(s) for category %s",
