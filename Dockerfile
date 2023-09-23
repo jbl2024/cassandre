@@ -54,6 +54,7 @@ RUN python manage.py tailwind build
 RUN python manage.py collectstatic --noinput
 
 # Copy ML models
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 RUN transformers-cli download "Jean-Baptiste/camembert-ner-with-dates"
 
 # Copy Nginx configuration
