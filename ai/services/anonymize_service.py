@@ -118,18 +118,7 @@ class Anonymizer:
         Returns:
             str: The anonymized text.
         """
-
-        # Anonymize phone numbers
-        anonymized_text = self.anonymize_phone_numbers(text)
-
-        # Anonymize NUMEN numbers
-        anonymized_text = self.anonymize_numen(anonymized_text)
-
-        # Anonymize INSEE numbers
-        anonymized_text = self.anonymize_insee(anonymized_text)
-
-        # Anonymize email addresses
-        anonymized_text = self.anonymize_email(anonymized_text)
+        anonymized_text = text
 
         entities = self.nlp(anonymized_text)
         self.add_to_filter(entities)
@@ -140,4 +129,15 @@ class Anonymizer:
                     entity["word"], "Madame/Monsieur"
                 )
 
+        # Anonymize phone numbers
+        anonymized_text = self.anonymize_phone_numbers(anonymized_text)
+
+        # Anonymize NUMEN numbers
+        anonymized_text = self.anonymize_numen(anonymized_text)
+
+        # Anonymize INSEE numbers
+        anonymized_text = self.anonymize_insee(anonymized_text)
+
+        # Anonymize email addresses
+        anonymized_text = self.anonymize_email(anonymized_text)
         return anonymized_text
