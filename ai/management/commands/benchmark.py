@@ -1,6 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 import pandas as pd
 from ai.services.search_service import search_documents
+
 
 class Command(BaseCommand):
     help = "Run a query for a specific category and engines from an Excel file"
@@ -14,7 +15,10 @@ class Command(BaseCommand):
             "engines", nargs="+", type=str, help="List of engines to be used"
         )
         parser.add_argument(
-            "--skip", type=int, default=0, help="Number of rows to skip from the start of the Excel file"
+            "--skip",
+            type=int,
+            default=0,
+            help="Number of rows to skip from the start of the Excel file",
         )
 
     def handle(self, *args, **options):
@@ -23,33 +27,33 @@ class Command(BaseCommand):
         engines = options["engines"]
         skip_rows = options["skip"]
 
-        self.stdout.write("Category ID: %s" % category_slug)
-        self.stdout.write("Excel file: %s" % excel_file)
-        self.stdout.write("Engines: %s" % ", ".join(engines))
-        self.stdout.write("Skip: %d" % skip_rows)
+        self.stdout.write(f"Category ID: {category_slug}")
+        self.stdout.write(f"Excel file: {excel_file}")
+        self.stdout.write(f"Engines: {', '.join(engines)}")
+        self.stdout.write(f"Skip: {skip_rows}")
 
-        df = pd.read_excel(excel_file, skiprows=skip_rows)
-        total_rows = len(df.index)
+        data_frame = pd.read_excel(excel_file, skiprows=skip_rows)
+        total_rows = len(data_frame.index)
 
         # Iterate over each row in the DataFrame
-        for index, row in df.iterrows():
+        for index, row in data_frame.iterrows():
             # Extract the second column
             query = row[1]
             for engine in engines:
                 res = search_documents(
-                    query, "", engine=engine, category_slug=category_slug
+                    query, engine=engine, category_slug=category_slug
                 )
                 answer = res["result"]
                 self.stdout.write(answer)
 
                 # Add the result to a new column for this engine
-                df.at[index, engine] = answer
+                data_frame.at[index, engine] = answer
 
             # Calculate and display the progress percentage
             progress = (index + 1) / total_rows * 100
-            self.stdout.write("Progress: {:.2f}%".format(progress))
+            self.stdout.write(f"Progress: {progress:.2f}%")
             # Write the DataFrame to a new Excel file
-            df.to_excel("output.xlsx", index=False)
+            data_frame.to_excel("output.xlsx", index=False)
 
         # Write the DataFrame to a new Excel file
-        df.to_excel("output.xlsx", index=False)
+        data_frame.to_excel("output.xlsx", index=False)
