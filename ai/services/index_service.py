@@ -1,4 +1,3 @@
-import io
 import logging
 import os
 import re
@@ -7,23 +6,37 @@ import tempfile
 import qdrant_client
 from django.conf import settings
 from django.core.files.storage import default_storage
-from langchain.document_loaders import (PDFMinerLoader, PDFPlumberLoader,
-                                        PyPDFLoader, TextLoader,
-                                        UnstructuredFileLoader,
-                                        UnstructuredMarkdownLoader)
+from langchain.document_loaders import (
+    PDFPlumberLoader,
+    TextLoader,
+)
 from langchain.schema import Document as LangchainDocument
-from langchain.text_splitter import (MarkdownTextSplitter, NLTKTextSplitter,
-                                     RecursiveCharacterTextSplitter,
-                                     SpacyTextSplitter)
+from langchain.text_splitter import (
+    SpacyTextSplitter,
+)
 from langchain.vectorstores import Qdrant
 
-from documents.embedding import get_embedding
+from ai.services.embedding import get_embedding
 from documents.models import Category, Correction, Document
 
 from .chunk import split_markdown
 
+logger = logging.getLogger("cassandre")
+
 
 def clean_text(text, full=True):
+    """
+    Cleans the input text based on the specified rules.
+
+    Args:
+        text (str): The text to be cleaned.
+        full (bool, optional): If True, applies full cleaning including removal of
+        duplicated consecutive end of lines, leading and trailing spaces,
+        and duplicated consecutive spaces. Defaults to True.
+
+    Returns:
+        str: The cleaned text.
+    """
     # Remove duplicated consecutive spaces
     if full is True:
         # Remove duplicated consecutive end of lines
@@ -40,10 +53,17 @@ def clean_text(text, full=True):
     return text
 
 
-logger = logging.getLogger("cassandre")
-
-
 def get_categories(category_id=None):
+    """
+    Fetches categories based on the provided category_id.
+
+    Args:
+        category_id (int, optional): The id of the category to be fetched. 
+        If None, fetches all categories. Defaults to None.
+
+    Returns:
+        QuerySet: A QuerySet containing the fetched categories.
+    """
     return (
         Category.objects.all()
         if category_id is None
@@ -106,11 +126,6 @@ def load_and_split_md(temp_file, document):
             )
 
     return splitted_docs
-    # text_splitter = MarkdownTextSplitter(
-    #     chunk_size=settings.SPLIT_CHUNK_SIZE,
-    #     chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
-    # )
-    # return text_splitter.split_documents(loaded_documents)
 
 
 def process_loaded_documents(loaded_documents, document, full_clean=True):
@@ -134,7 +149,8 @@ def index_documents(category_id=None):
     """
     Indexes all the documents in the specified category.
 
-    :param category_id: The ID of the category to index documents for. If not specified, all categories will be indexed.
+    :param category_id: The ID of the category to index documents for. 
+    If not specified, all categories will be indexed.
     """
     categories = get_categories(category_id)
 
@@ -150,7 +166,7 @@ def index_documents(category_id=None):
                 with tempfile.NamedTemporaryFile(
                     suffix=file_ext, delete=False
                 ) as temp_file:
-                    logger.info(f"Loading: {document.title or document.file}")
+                    logger.info("Loading: %s", document.title or document.file)
                     temp_file.write(file_content)
                     temp_file.flush()
 
@@ -159,16 +175,14 @@ def index_documents(category_id=None):
                     elif file_ext == ".md":
                         texts.extend(load_and_split_md(temp_file, document))
 
-                    logger.info(
-                        f"Successfully loaded document: {document.title or document.file}"
-                    )
+                    logger.info("Successfully loaded document: %s", document.title or document.file)
 
         corrections = Correction.objects.filter(category=category)
         for correction in corrections:
             document = LangchainDocument(
                 page_content=f"Question: {correction.query}\nRéponse: {correction.answer}",
                 metadata={
-                    "origin": f"correction manuelle",
+                    "origin": "correction manuelle",
                     "source": f"correction-{correction.id}",
                     "page": 1,
                 },
@@ -177,8 +191,8 @@ def index_documents(category_id=None):
 
         embeddings = get_embedding()
         url = settings.QDRANT_URL
-        q = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
-        q.delete_collection(category.slug)
+        client = qdrant_client.QdrantClient(url=url, prefer_grpc=True)
+        client.delete_collection(category.slug)
         Qdrant.from_documents(
             documents=texts,
             embedding=embeddings,
@@ -188,7 +202,8 @@ def index_documents(category_id=None):
         )
 
         logger.info(
-            f"Successfully indexed {documents.count()} document(s) and {corrections.count()} correction(s) for category {category.name}"
+            "Successfully indexed %s document(s) and %s correction(s) for category %s",
+            documents.count(), corrections.count(), category.name
         )
 
     logger.info("Successfully indexed all documents")

@@ -23,8 +23,8 @@ from paradigm_client.remote_model import RemoteModel
 from pydantic import BaseModel
 from transformers import AutoTokenizer, pipeline
 
-from documents.anonymize import Anonymizer
-from documents.embedding import get_embedding, get_query_prefix
+from ai.services.anonymize_service import Anonymizer
+from ai.services.embedding import get_embedding, get_query_prefix
 from documents.models import Category
 
 logger = logging.getLogger("cassandre")

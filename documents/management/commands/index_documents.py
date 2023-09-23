@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from documents.index import index_documents
+from ai.services.index_service import index_documents
 
 class Command(BaseCommand):
     help = 'Index all documents in the Document app, create embeddings and save them in Chroma vector DB'
