@@ -89,7 +89,7 @@ class Command(BaseCommand):
 
                     # Calculate and display the progress percentage
                     progress = (index + 1) / total_rows * 100
-                    self.stdout.write(f"Progress: {progress:.2f}%")
+                    self.stdout.write(f"Progress: {progress:.2f}% ({index + 1}/{total_rows})")
                 except Exception as err:
                     # Save partial results to avoid losing data
                     data_frame.to_excel("output_partial.xlsx", index=False)
