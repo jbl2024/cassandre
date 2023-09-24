@@ -19,18 +19,12 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from chat.views import SearchAPIView, debug, debug_vector, search
-from documents.views import correct
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/v1/search/<str:category_slug>/', SearchAPIView.as_view(), name='search_api'),
-    path('search/<str:category_slug>/', search, name='search'),
-    path('search/', search, name='search'),    
-    path('correct/<int:category_id>/', correct, name='correct'),
-    path('__internal_cas_debug__/', debug, name='debug'),    
-    path('__internal_cas_debug_vector__/', debug_vector, name='debug_vector'),    
-    path('backoffice/', include('backoffice.urls')),
+    path("admin/", admin.site.urls),
+    path("chat/", include("chat.urls")),
+    path("documents/", include("documents.urls")),
+    path("backoffice/", include("backoffice.urls")),
 ]
 
 if settings.DEBUG:
@@ -38,4 +32,3 @@ if settings.DEBUG:
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
-
