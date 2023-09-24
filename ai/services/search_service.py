@@ -117,7 +117,7 @@ class DocumentSearch:
 
     def normalize_query(self, query):
         """
-        This method normalizes the query by converting it to lowercase 
+        This method normalizes the query by converting it to lowercase
         and replacing abbreviations with their full forms.
 
         Args:
@@ -133,7 +133,12 @@ class DocumentSearch:
 
 
 def search_documents(
-    query, engine="gpt-3.5-turbo", category_slug="documents", prompt=None, k=None, callback=None
+    query,
+    engine="gpt-3.5-turbo",
+    category_slug="documents",
+    prompt=None,
+    k=None,
+    callback=None,
 ):
     """
     This function searches for documents based on the provided query and category.
@@ -142,7 +147,7 @@ def search_documents(
         query (str): The search query.
         engine (str, optional): The search engine to use. Defaults to "gpt-3.5-turbo".
         category_slug (str): The category of the documents to search.
-        callback (function, optional): A callback function to handle the search results. 
+        callback (function, optional): A callback function to handle the search results.
             Defaults to None.
 
     Returns:
@@ -175,7 +180,7 @@ def query_lighton(prompt, query, documents, engine, callback):
         query (str): The search query.
         documents (list): The list of relevant documents.
         engine (str, optional): The search engine to use. Defaults to "gpt-3.5-turbo".
-        callback (function, optional): A callback function to handle the search results. 
+        callback (function, optional): A callback function to handle the search results.
             Defaults to None.
 
     Returns:
@@ -224,7 +229,7 @@ def query_lighton(prompt, query, documents, engine, callback):
 
 def query_openai(prompt, query, documents, engine, callback):
     """
-    This function queries the OpenAI model with a 
+    This function queries the OpenAI model with a
     given category, query, documents, engine, and callback.
 
     Args:
@@ -232,7 +237,7 @@ def query_openai(prompt, query, documents, engine, callback):
         query (str): The search query.
         documents (list): The list of relevant documents.
         engine (str): The search engine to use.
-        callback (function, optional): A callback function 
+        callback (function, optional): A callback function
             to handle the search results. Defaults to None.
 
     Returns:
@@ -253,7 +258,7 @@ def query_openai(prompt, query, documents, engine, callback):
     prompt = prompt_template.format(context=context, question=query)
     enc = tiktoken.get_encoding("cl100k_base")
     token_count = len(enc.encode(prompt))
-      
+
     logger.debug("Prompt: %s", prompt)
     logger.debug("Number of tokens: %d", token_count)
 
@@ -276,13 +281,13 @@ def query_openai(prompt, query, documents, engine, callback):
     question_answer.combine_documents_chain.llm_chain.prompt = prompt_template
 
     results = question_answer({"query": query}, return_only_outputs=True)
-    return {"result": results["result"], "input": prompt, "token_count": token_count}    
+    return {"result": results["result"], "input": prompt, "token_count": token_count}
     # return results
 
 
 def query_falcon(prompt, query, documents, engine, callback):
     """
-    This function queries the Falcon model with 
+    This function queries the Falcon model with
     a given category, query, documents, engine, and callback.
 
     Args:
@@ -328,7 +333,8 @@ def query_falcon(prompt, query, documents, engine, callback):
         json=data,
     )
     response_json = response.json()
-    return {"result": response_json['text'], "input": prompt}
+    return {"result": response_json["text"], "input": prompt}
+
 
 def query_vertexai(category, query, documents, engine, callback):
     """

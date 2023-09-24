@@ -24,6 +24,9 @@ class StreamingCallbackHandler(BaseCallbackHandler):
         super().__init__(*args, **kwargs)
         self.session_id = session_id
 
+    def on_chat_model_start(self, *args, **kwargs):
+        """Run when chat model starts running."""
+
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -69,7 +72,6 @@ class StreamingCallbackHandler(BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
-        pass
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -88,8 +90,11 @@ class StreamingCallbackHandler(BaseCallbackHandler):
 
 def search(request, category_slug="documents"):
     """
-    This function handles the search request. It takes in a request and a category_slug as parameters.
-    If the request method is POST, it processes the search query and returns the search results in a JsonResponse.
+    This function handles the search request.
+    It takes in a request and a category_slug as parameters.
+
+    If the request method is POST, it processes the search query
+    and returns the search results in a JsonResponse.
     If the request method is not POST, it renders the search form.
 
     Parameters:
@@ -167,6 +172,18 @@ def debug(request):
 
 
 def debug_vector(request):
+    """
+    This function handles the debug vector request. It takes in a request as a parameter.
+    If the request method is POST, it processes the debug vector query 
+    and returns the debug vector results.
+    If the request method is not POST, it renders the debug vector form.
+
+    Parameters:
+    request (HttpRequest): The debug vector request.
+
+    Returns:
+    HttpResponse: The debug vector form if the request method is not POST.
+    """
     category_id = request.GET.get("category")
     documents = []
     if category_id:
@@ -192,7 +209,34 @@ def debug_vector(request):
 
 
 class SearchAPIView(APIView):
+    """
+    This class-based view handles the search API request.
+    It takes in a request and a category_slug as parameters.
+    If the request method is POST, it processes the search query
+    and returns the search results in a JsonResponse.
+    If the request method is not POST, it returns the form errors with a 400 status.
+
+    Parameters:
+    request (HttpRequest): The search request.
+    category_slug (str): The category slug. Default is "documents".
+
+    Returns:
+    Response: The search results in a JsonResponse if the request method is POST.
+    Response: The form errors with a 400 status if the request method is not POST.
+    """
+
     def post(self, request, category_slug="documents"):
+        """
+        Handles the POST request for the search API.
+
+        Parameters:
+        request (HttpRequest): The search request.
+        category_slug (str): The category slug. Default is "documents".
+
+        Returns:
+        Response: The search results in a JsonResponse if the form is valid.
+        Response: The form errors with a 400 status if the form is not valid.
+        """
         form = SearchForm(request.data)
         if form.is_valid():
             query = form.cleaned_data["query"]
