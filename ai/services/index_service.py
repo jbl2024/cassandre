@@ -8,6 +8,7 @@ from django.core.files.storage import default_storage
 from langchain.document_loaders import PDFPlumberLoader, TextLoader
 from langchain.schema import Document as LangchainDocument
 from langchain.text_splitter import SpacyTextSplitter
+from ai.services.hints import parse_hints
 
 from documents.models import Category, Correction, Document
 
@@ -51,7 +52,7 @@ def get_categories(category_id=None):
     Fetches categories based on the provided category_id.
 
     Args:
-        category_id (int, optional): The id of the category to be fetched. 
+        category_id (int, optional): The id of the category to be fetched.
         If None, fetches all categories. Defaults to None.
 
     Returns:
@@ -83,7 +84,22 @@ def load_and_split_pdf(temp_file, document):
         chunk_size=settings.SPLIT_CHUNK_SIZE,
         chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
     )
-    return text_splitter.split_documents(loaded_documents)
+    splitted_documents = text_splitter.split_documents(loaded_documents)
+
+    hint_mappings = parse_hints(getattr(document, "hints", ""))
+
+    for doc in splitted_documents:
+        page_number = doc.metadata.get("page", 1)
+        specific_hints = hint_mappings.get(page_number, [])
+        all_hints = hint_mappings.get("all", [])
+
+        # Combine all hints applicable to this page
+        combined_hints = specific_hints + all_hints
+        if combined_hints:
+            doc.page_content = f"{' - '.join(combined_hints)}\n" + doc.page_content
+        else:
+            doc.page_content = f"{doc.metadata.get('origin', '')}\n" + doc.page_content
+    return splitted_documents
 
 
 def load_and_split_md(temp_file, document):
@@ -142,7 +158,7 @@ def index_documents(category_id=None):
     """
     Indexes all the documents in the specified category.
 
-    :param category_id: The ID of the category to index documents for. 
+    :param category_id: The ID of the category to index documents for.
     If not specified, all categories will be indexed.
     """
     categories = get_categories(category_id)
@@ -168,7 +184,10 @@ def index_documents(category_id=None):
                     elif file_ext == ".md":
                         texts.extend(load_and_split_md(temp_file, document))
 
-                    logger.info("Successfully loaded document: %s", document.title or document.file)
+                    logger.info(
+                        "Successfully loaded document: %s",
+                        document.title or document.file,
+                    )
 
         corrections = Correction.objects.filter(category=category)
         for correction in corrections:
@@ -186,7 +205,9 @@ def index_documents(category_id=None):
 
         logger.info(
             "Successfully indexed %s document(s) and %s correction(s) for category %s",
-            documents.count(), corrections.count(), category.name
+            documents.count(),
+            corrections.count(),
+            category.name,
         )
 
     logger.info("Successfully indexed all documents")

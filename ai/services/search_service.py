@@ -227,6 +227,13 @@ def query_lighton(prompt, query, documents, engine, callback):
         return {"result": "No completions found"}
 
 
+def format_content(content):
+    lines = content.split("\n")
+    if lines:
+        lines[0] = f"### {lines[0]}"
+    return "\n".join(lines)
+
+
 def query_openai(prompt, query, documents, engine, callback):
     """
     This function queries the OpenAI model with a
@@ -254,7 +261,7 @@ def query_openai(prompt, query, documents, engine, callback):
         template=f"Nous sommes le {formatted_date_time}\n{prompt}",
     )
 
-    context = "###\n".join([doc.page_content for doc in documents])
+    context = "\n".join([format_content(doc.page_content) for doc in documents])
     prompt = prompt_template.format(context=context, question=query)
     enc = tiktoken.get_encoding("cl100k_base")
     token_count = len(enc.encode(prompt))
@@ -264,13 +271,24 @@ def query_openai(prompt, query, documents, engine, callback):
 
     callbacks = [callback] if callback is not None else []
 
+    max_tokens = 4096 - token_count
+
     if engine == "gpt-3.5-turbo-instruct":
         llm = OpenAI(
-            streaming=True, temperature=0, model_name=engine, callbacks=callbacks
+            streaming=True,
+            temperature=0,
+            model_name=engine,
+            request_timeout=300,
+            callbacks=callbacks,
+            max_tokens=max_tokens,
         )
     else:
         llm = ChatOpenAI(
-            streaming=True, temperature=0, model_name=engine, callbacks=callbacks
+            streaming=True,
+            temperature=0,
+            model_name=engine,
+            request_timeout=300,
+            callbacks=callbacks,
         )
 
     question_answer = RetrievalQA.from_chain_type(
