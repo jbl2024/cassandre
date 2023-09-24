@@ -1,15 +1,18 @@
-# cassandre
+# Cassandre
 
-## architecture
-- django + celery (queues) + asgi (websockets)
+## Architecture
 
-in docker
-- postgresql
-- minio
-- redis
-- qdrant
+Cassandre is a Django-based application that uses Celery for task queues and ASGI for websockets. It's designed to run in a Docker environment with several services including PostgreSQL, Minio, Redis, and Qdrant.
 
-## setup (dev mode)
+- **Django + Celery + ASGI**: The main application is built with Django. Celery is used for managing asynchronous tasks and ASGI for handling websockets.
+
+- **Docker Services**: The application runs in a Docker environment with several services:
+  - **PostgreSQL**: Used as the main database.
+  - **Minio**: An object storage server used for storing files.
+  - **Redis**: Used as a message broker for Celery.
+  - **Qdrant**: A vector similarity search engine used for document indexing.
+
+## Setup (dev mode)
 
 Install dependencies
 
@@ -41,7 +44,7 @@ http://localhost:8000/search
 Backoffice:
 http://localhost:8000/admin
 
-## env vars
+## Environment Variables
 ```
 DB_USER=
 DB_HOST=
@@ -67,3 +70,36 @@ PARADIGM_HOST=
 WEBSOCKET_URL=
 CHANNEL_REDIS=
 ```
+
+## Makefile
+
+The `Makefile` contains several commands for running the application and managing its dependencies. It includes commands for running the server in development mode, stopping the server, running Celery, applying migrations, and others.
+
+## Application Modules
+
+The application is divided into several modules, each with its own responsibilities. These include:
+
+- **Documents**: Handles operations related to documents.
+- **AI**: Handles AI-related operations.
+- **Chat**: Handles operations related to chat functionality.
+- **Backoffice**: Handles operations related to the backoffice functionality.
+- **Common**: Contains common functionalities used across the application.
+
+Each module is represented by a Django app with its own `models.py`, `views.py`, `tests.py`, and `apps.py` files.
+
+## Frontend
+
+The frontend of the application is built with Tailwind CSS. The configuration for Tailwind CSS is defined in the `tailwind.config.js` file.
+
+## Tests
+
+Tests for the application are written using Django's testing framework and are located in the `tests.py` files of each module.
+
+## Other Files
+
+There are several other files in the codebase that are used for various purposes. These include:
+
+- **`manage.py`**: The main entry point for Django command-line utility.
+- **[requirements](file:///Users/jbl2024/rectorat/cassandre/README.md#19%2C18-19%2C18)**: Contains the Python dependencies required by the application.
+- **`docker-compose.yml`**: Defines the services that make up the application in a Docker environment.
+- **`nginx.conf`**: The configuration file for Nginx, which is used as a reverse proxy for the application.
