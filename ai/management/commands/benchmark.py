@@ -1,5 +1,9 @@
-from django.core.management.base import BaseCommand
+# pylint: disable=broad-except
+from concurrent.futures import ThreadPoolExecutor
+
 import pandas as pd
+from django.core.management.base import BaseCommand
+
 from ai.services.search_service import search_documents
 
 
@@ -20,6 +24,42 @@ class Command(BaseCommand):
             default=0,
             help="Number of rows to skip from the start of the Excel file",
         )
+        parser.add_argument(
+            "--max-tasks",
+            type=int,
+            default=10,
+            help="Maximum number of parallel tasks",
+        )
+
+    def handle_row(self, index, row, engines, category_slug):
+        """
+        Handles a single row from the Excel file.
+
+        Args:
+            index (int): The index of the row in the Excel file.
+            row (pd.Series): The row data from the Excel file.
+            engines (list): The list of engines to be used.
+            category_slug (str): The slug of the category.
+
+        Returns:
+            tuple: The index of the row and the results from the search.
+        """
+        results = {}
+        query = row[1]
+        for engine in engines:
+            try:
+                res = search_documents(
+                    query, engine=engine, category_slug=category_slug
+                )
+                answer = res["result"]
+                results[engine] = answer
+            except Exception as err:
+                # Handle specific exceptions as needed or just log the error
+                self.stdout.write(
+                    f"Error processing index {index} with engine {engine}: {err}"
+                )
+                results[engine] = "Error"
+        return index, results
 
     def handle(self, *args, **options):
         category_slug = options["category_slug"]
@@ -35,25 +75,28 @@ class Command(BaseCommand):
         data_frame = pd.read_excel(excel_file, skiprows=skip_rows)
         total_rows = len(data_frame.index)
 
-        # Iterate over each row in the DataFrame
-        for index, row in data_frame.iterrows():
-            # Extract the second column
-            query = row[1]
-            for engine in engines:
-                res = search_documents(
-                    query, engine=engine, category_slug=category_slug
-                )
-                answer = res["result"]
-                self.stdout.write(answer)
+        with ThreadPoolExecutor(max_workers=options["max_tasks"]) as executor:
+            futures = [
+                executor.submit(self.handle_row, index, row, engines, category_slug)
+                for index, row in data_frame.iterrows()
+            ]
 
-                # Add the result to a new column for this engine
-                data_frame.at[index, engine] = answer
+            for future in futures:
+                try:
+                    index, results = future.result()
+                    for engine, answer in results.items():
+                        data_frame.at[index, engine] = answer
 
-            # Calculate and display the progress percentage
-            progress = (index + 1) / total_rows * 100
-            self.stdout.write(f"Progress: {progress:.2f}%")
-            # Write the DataFrame to a new Excel file
-            data_frame.to_excel("output.xlsx", index=False)
+                    # Calculate and display the progress percentage
+                    progress = (index + 1) / total_rows * 100
+                    self.stdout.write(f"Progress: {progress:.2f}%")
+                except Exception as err:
+                    # Save partial results to avoid losing data
+                    data_frame.to_excel("output_partial.xlsx", index=False)
+                    self.stdout.write(
+                        f"Error processing index {index}. Saved partial results to "
+                        f"'output_partial.xlsx'. Error: {err}"
+                    )
 
-        # Write the DataFrame to a new Excel file
+        # Write the DataFrame to a new Excel file once after all tasks have completed
         data_frame.to_excel("output.xlsx", index=False)
