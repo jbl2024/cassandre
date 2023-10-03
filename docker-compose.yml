@@ -1,6 +1,27 @@
 ---
   version: '3'
   services:
+    web:
+      profiles:
+        - dev
+      build: 
+        context: .
+        dockerfile: Dockerfile.dev
+      command: supervisord -c /etc/supervisor/conf.d/supervisord.conf
+      volumes:
+        - .:/app
+      ports:
+        - "8000:8000"
+      environment:
+        - OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+        - PYTHONDONTWRITEBYTECODE 1
+        - PYTHONUNBUFFERED 1
+        - DJANGO_SETTINGS_MODULE cassandre.dev_docker_settings
+      depends_on:
+        - db
+        - redis
+        - qdrant
+        - minio
     redis:
       image: redis:latest
       ports:

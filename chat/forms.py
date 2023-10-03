@@ -46,6 +46,7 @@ class DebugForm(forms.ModelForm):
         ("gpt-3.5-turbo", "ChatGPT 3.5"),
         ("gpt-3.5-turbo-instruct", "GPT 3.5 instruct"),
         ("gpt-4", "ChatGPT 4"),
+        ("mistral_instruct", "Mistral Instruct"),
         ("falcon", "Falcon"),
         ("paradigm", "LightOn"),
     ]

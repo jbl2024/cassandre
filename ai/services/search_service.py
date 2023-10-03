@@ -161,6 +161,7 @@ def search_documents(
 
     engine_query_map = {
         "falcon": query_falcon,
+        "mistral_instruct": query_mistral_instruct,
         "paradigm": query_lighton,
         "fastchat": query_fastchat,
         "vertexai": query_vertexai,
@@ -353,6 +354,57 @@ def query_falcon(prompt, query, documents, engine, callback):
     response_json = response.json()
     return {"result": response_json["text"], "input": prompt}
 
+def query_mistral_instruct(prompt, query, documents, engine, callback):
+    """
+    This function queries the Mistral instruct model with
+    a given category, query, documents, engine, and callback.
+
+    Args:
+        category (str): The category of the query.
+        query (str): The search query.
+        documents (list): The list of relevant documents.
+        engine (str): The search engine to use.
+        callback (function, optional): A callback function to handle the search results. 
+        Defaults to None.
+
+    Returns:
+        dict: A dictionary containing the search results.
+    """
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d %B %Y à %H:%M")
+
+    prompt_template = PromptTemplate(
+        input_variables=["question", "context"], template=f"{prompt}"
+    )
+
+    context = (
+        "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
+    )
+    prompt = prompt_template.format(context=context, question=query)
+    logger.debug("Prompt: %s", prompt)
+
+    data = {
+        "system": "Only respond if the answer is contained in the text above",
+        "messages": [prompt],
+        "max_tokens": 500,
+        "temperature": 0.2,
+        "top_k": 10,
+        "top_p": 0.5,
+        "stop": "\nQ:"
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {}".format(settings.TEXT_SYNTH_API_KEY),
+    }
+
+    response = requests.post(
+        "https://api.textsynth.com/v1/engines/mistral_7B_instruct/chat",
+        headers=headers,
+        json=data,
+    )
+    response_json = response.json()
+    return {"result": response_json["text"], "input": prompt}
 
 def query_vertexai(category, query, documents, engine, callback):
     """
