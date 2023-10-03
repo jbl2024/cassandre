@@ -49,7 +49,7 @@ http://localhost:8000/admin
 
 Run dev container:
 ```
-$ docker-compose --profile dev  up
+$ docker-compose --profile dev up
 ```
 
 Rebuild dev container:
