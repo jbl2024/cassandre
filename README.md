@@ -14,6 +14,8 @@ Cassandre is a Django-based application that uses Celery for task queues and ASG
 
 ## Setup (dev mode)
 
+### Option 1: local python, dockerized services
+
 Install dependencies
 
 ```sh
@@ -37,12 +39,31 @@ Run all:
 $ ./start_all.sh
 ```
 
-
 Front:
 http://localhost:8000/search
 
 Backoffice:
 http://localhost:8000/admin
+
+### Option 2: all docker
+
+Run dev container:
+```
+$ docker-compose --profile dev up
+```
+
+Rebuild dev container:
+```
+$ docker-compose --profile dev build
+```
+
+Execute any commands:
+```
+$ docker-compose exec web python manage.py createsuperuser
+```
+```
+$ docker-compose exec web python manage.py makemigrations
+```
 
 ## Environment Variables
 ```
