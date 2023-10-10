@@ -17,7 +17,7 @@ import tiktoken
 from django.conf import settings
 from langchain import HuggingFacePipeline
 from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI, ChatVertexAI
 from langchain.llms import OpenAI, VertexAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever, Document
@@ -51,13 +51,12 @@ class DocumentSearch:
     It uses the Qdrant client for similarity search and retrieves relevant documents.
     """
 
-    def __init__(self, category, k=None):
+    def __init__(self, category):
         self.abbreviation_dict = {
             "sft": "supplément familial de traitement",
             "iff": "indemnité forfaitaire de formation",
         }
         self.category = category
-        self.k = k
         self.embeddings = get_embedding()
         self.query_prefix = get_query_prefix()
         url = settings.QDRANT_URL
@@ -156,8 +155,8 @@ def search_documents(
     query = Anonymizer().anonymize(query)
     category = Category.objects.get(slug=category_slug)
 
-    document_search = DocumentSearch(category=category, k=k)
-    documents = document_search.get_relevant_documents(query)
+    document_search = DocumentSearch(category=category)
+    documents = document_search.get_relevant_documents(query, k=k)
 
     engine_query_map = {
         "falcon": query_falcon,
@@ -406,12 +405,12 @@ def query_mistral_instruct(prompt, query, documents, engine, callback):
     response_json = response.json()
     return {"result": response_json["text"], "input": prompt}
 
-def query_vertexai(category, query, documents, engine, callback):
+def query_vertexai(prompt, query, documents, engine, callback):
     """
     This function queries the VertexAI model with a given category, query, documents, engine, and callback.
 
     Args:
-        category (str): The category of the query.
+        promt (str): The promt.
         query (str): The search query.
         documents (list): The list of relevant documents.
         engine (str): The search engine to use.
@@ -424,17 +423,18 @@ def query_vertexai(category, query, documents, engine, callback):
     formatted_date_time = now.strftime("%d %B %Y à %H:%M")
 
     prompt_template = PromptTemplate(
-        input_variables=["question", "context"], template=f"{category.prompt}"
+        input_variables=["question", "context"], template=f"{prompt}"
     )
 
-    context = "\n".join([doc.page_content for doc in documents])
+    context = (
+        "\n***\n" + "\n***\n".join([doc.page_content for doc in documents]) + "\n***\n"
+    )
     prompt = prompt_template.format(context=context, question=query)
-    enc = tiktoken.get_encoding("cl100k_base")
-    logger.debug(f"Prompt: {prompt}")
-    logger.debug(f"Number of tokens: {len(enc.encode(prompt))}")
+    logger.debug("Prompt: %s", prompt)
+
 
     qa = RetrievalQA.from_chain_type(
-        llm=VertexAI(),
+        llm=ChatVertexAI(),
         chain_type="stuff",
         retriever=DocsRetriever(documents=documents),
     )

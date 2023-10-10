@@ -49,6 +49,7 @@ class DebugForm(forms.ModelForm):
         ("mistral_instruct", "Mistral Instruct"),
         ("falcon", "Falcon"),
         ("paradigm", "LightOn"),
+        ("vertexai", "VertexAI"),
     ]
     engine = forms.ChoiceField(choices=ENGINE_CHOICES)
     category = forms.ModelChoiceField(
