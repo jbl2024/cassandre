@@ -1,6 +1,6 @@
 Django==4.2.1
 django-zipfile==0.4.0
-langchain==0.0.295
+langchain==0.0.310
 unstructured==0.6.2
 pdfminer.six==20221105
 qdrant-client==1.1.6
@@ -30,7 +30,7 @@ Markdown==3.4.3
 django-filter==23.2
 
 # for vertex ai
-google-cloud-aiplatform==1.25.0
+google-cloud-aiplatform==1.34.0
 
 # for anonymization
 spacy==3.6.1
