@@ -200,8 +200,8 @@ def debug_vector(request):
             query = form.cleaned_data["query"]
 
             category = Category.objects.get(id=category_id)
-            document_search = DocumentSearch(category=category, k=k)
-            documents = document_search.get_relevant_documents(query)
+            document_search = DocumentSearch(category=category)
+            documents = document_search.get_relevant_documents(query, k=k)
 
     return render(
         request, "chat/debug_vector.html", {"form": form, "documents": documents}
