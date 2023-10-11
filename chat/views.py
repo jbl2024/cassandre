@@ -259,8 +259,6 @@ class AsyncSearchView(APIView):
     sent to the provided `callback_url`.
     """
 
-    # Override throttle_classes for this view
-    throttle_classes = []
 
     def post(self, request, *args, **kwargs):
         """
