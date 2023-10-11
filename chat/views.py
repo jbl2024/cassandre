@@ -17,7 +17,7 @@ from documents.models import Category, Correction
 from .forms import DebugForm, DebugVectorForm, SearchForm
 from .global_registry import websockets
 from .serializers import AsyncSearchSerializer
-from .tasks import async_search
+from ai.tasks import async_search
 
 class StreamingCallbackHandler(BaseCallbackHandler):
     """Callback handler for streaming. Only works with LLMs that support streaming."""
