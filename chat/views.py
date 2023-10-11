@@ -7,15 +7,17 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ai.services.search_service import DocumentSearch, search_documents
 from documents.models import Category, Correction
-from ai.services.search_service import search_documents, DocumentSearch
 
 from .forms import DebugForm, DebugVectorForm, SearchForm
 from .global_registry import websockets
-
+from .serializers import AsyncSearchSerializer
+from .tasks import async_search
 
 class StreamingCallbackHandler(BaseCallbackHandler):
     """Callback handler for streaming. Only works with LLMs that support streaming."""
@@ -174,7 +176,7 @@ def debug(request):
 def debug_vector(request):
     """
     This function handles the debug vector request. It takes in a request as a parameter.
-    If the request method is POST, it processes the debug vector query 
+    If the request method is POST, it processes the debug vector query
     and returns the debug vector results.
     If the request method is not POST, it renders the debug vector form.
 
@@ -246,3 +248,47 @@ class SearchAPIView(APIView):
             return Response({"result": results["result"], "source_documents": []})
 
         return Response(form.errors, status=400)
+
+
+class AsyncSearchView(APIView):
+    """
+    API endpoint that handles asynchronous search requests.
+
+    This view expects a `callback_url`, `query`, `engine`, and `category_slug` in the POST
+    request data. It schedules the search for asynchronous processing and the results are
+    sent to the provided `callback_url`.
+    """
+
+    # Override throttle_classes for this view
+    throttle_classes = []
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handle a POST request to initiate an asynchronous chat.
+
+        Args:
+            request (Request): DRF request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: A response indicating the chat has been scheduled or errors.
+        """
+
+        serializer = AsyncSearchSerializer(data=request.data)
+
+        if serializer.is_valid():
+            callback_url = serializer.validated_data["callback_url"]
+            query = serializer.validated_data["query"]
+            engine = serializer.validated_data["engine"]
+            category_slug = serializer.validated_data["category_slug"]
+
+            async_search.delay(
+                callback_url=callback_url,
+                query=query,
+                category_slug=category_slug,
+                engine=engine,
+            )
+            return Response(status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
