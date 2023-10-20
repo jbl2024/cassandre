@@ -3,7 +3,12 @@ This module provides functions for working with language embeddings.
 """
 from langchain.embeddings import OpenAIEmbeddings
 
-# from langchain.embeddings import SentenceTransformerEmbeddings
+from langchain.embeddings.huggingface import (
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+
+EMBEDDING = "intfloat/multilingual-e5-large"
 
 
 def get_embedding():
@@ -13,12 +18,24 @@ def get_embedding():
     Returns:
         OpenAIEmbeddings: An instance of the OpenAIEmbeddings class.
     """
-    # return SentenceTransformerEmbeddings(model_name="hkunlp/instructor-xl")
-    # return SentenceTransformerEmbeddings(model_name="BAAI/bge-small-en")
-    return OpenAIEmbeddings()
-
-
-# Represent this sentence for searching relevant passages:
+    if EMBEDDING == "hkunlp/instructor-xl":
+        return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
+    if EMBEDDING == "hkunlp/instructor-large":
+        return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large")
+    elif EMBEDDING == "BAAI/bge-small-en-v1.5":
+        return HuggingFaceBgeEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    elif EMBEDDING == "BAAI/bge-base-en-v1.5":
+        return HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en-v1.5")
+    elif EMBEDDING == "BAAI/bge-large-en-v1.5":
+        return HuggingFaceBgeEmbeddings(model_name="BAAI/bge-large-en-v1.5")
+    elif EMBEDDING == "intfloat/multilingual-e5-large":
+        return HuggingFaceInstructEmbeddings(
+            model_name="intfloat/multilingual-e5-large",
+            query_instruction="query: ",
+            embed_instruction="passage: ",
+        )
+    elif EMBEDDING == "openai":
+        return OpenAIEmbeddings()
 
 
 def get_query_prefix():
@@ -29,4 +46,3 @@ def get_query_prefix():
         str: A string representing the query prefix.
     """
     return ""
-    # return "Represent this sentence for searching relevant passages:"

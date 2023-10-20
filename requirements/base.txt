@@ -40,3 +40,5 @@ pybloom-live==4.0.0
 # for pdf text extraction
 pdfplumber==0.9.0
 nltk==3.8.1
+
+InstructorEmbedding==1.0.1

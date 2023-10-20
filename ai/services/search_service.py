@@ -65,7 +65,7 @@ class DocumentSearch:
             self.client, self.category.slug, self.embeddings.embed_query
         )
 
-    def get_relevant_documents(self, query, threshold=0.80, k=None):
+    def get_relevant_documents(self, query, threshold=0.20, k=None):
         """
         This method retrieves the relevant documents based on the given query.
         It performs a similarity search using the Qdrant client and filters
@@ -88,7 +88,7 @@ class DocumentSearch:
             page = doc.metadata.get("page", "")
             source = doc.metadata.get("origin", "")
 
-            doc.page_content = f"{doc.page_content}\nsource: {source} - page {page}\n"
+            doc.page_content = f"{doc.page_content}\nsource: {source} - page {page} - score {score}\n"
             documents.append(doc)
         return documents
 
@@ -187,7 +187,7 @@ def query_lighton(prompt, query, documents, engine, callback):
         dict: A dictionary containing the search results.
     """
     host_ip = os.environ["PARADIGM_HOST"]
-    model = RemoteModel(host_ip, model_name="llm-mini")
+    model = RemoteModel(host_ip, model_name="alfred-40b-0723")
 
     context = "###\n".join([doc.page_content for doc in documents])
     prompt_template = PromptTemplate(
@@ -195,13 +195,13 @@ def query_lighton(prompt, query, documents, engine, callback):
     )
 
     # Utilise l'API Tokenize pour obtenir les ID de tokens pour "Je ne sais pas"
-    tokenize_response = model.tokenize("Je ne sais pas")
+    # tokenize_response = model.tokenize("Je ne sais pas")
 
-    # Récupére les ID de tokens à partir de la réponse
-    token_ids = [list(token.values())[0] for token in tokenize_response.tokens]
+    # # Récupére les ID de tokens à partir de la réponse
+    # token_ids = [list(token.values())[0] for token in tokenize_response.tokens]
 
-    # Ajoute un biais positif pour ces tokens
-    biases = {token_id: 5 for token_id in token_ids}
+    # # Ajoute un biais positif pour ces tokens
+    # biases = {token_id: 5 for token_id in token_ids}
 
     prompt = prompt_template.format(context=context, question=query)
 
@@ -210,19 +210,21 @@ def query_lighton(prompt, query, documents, engine, callback):
     logger.debug("Number of tokens: %d", len(model.tokenize(prompt).tokens))
 
     stop_words = [
-        "\n\n",
-        "\nQuestion:",
+        # "\r\n\r\n\r\n",
+        "Question:",
+        "User:",
     ]  # List of stopping strings to use during the generation
     parameters = {
-        "n_tokens": 200,
-        "temperature": 0,
-        "biases": biases,
+        "n_tokens": 512,
+        "temperature": 0.01,
+        # "biases": biases,
         "stop_regex": r"(?i)(" + "|".join(re.escape(word) for word in stop_words) + ")",
     }
 
     paradigm_result = model.create(prompt, **parameters)
+    print(paradigm_result)
     if hasattr(paradigm_result, "completions") and len(paradigm_result.completions) > 0:
-        return {"result": paradigm_result.completions[0].output_text}
+        return {"result": paradigm_result.completions[0].output_text, "input": prompt}
     else:
         return {"result": "No completions found"}
 
