@@ -1,4 +1,5 @@
 import hashlib
+import os
 
 from django.db import models
 from django.utils import timezone
@@ -54,6 +55,7 @@ class Document(models.Model):
     """
 
     file = models.FileField(upload_to=get_upload_path, max_length=255)
+    slug = models.SlugField(max_length=1024, unique=True, editable=True, blank=True)
     title = models.CharField(max_length=255, blank=True, null=False)
     created_at = models.DateTimeField(default=timezone.now)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
@@ -63,6 +65,17 @@ class Document(models.Model):
         help_text="Hints to augment the context for the document.",
     )
 
+    def save(self, *args, **kwargs):
+        # Extract the last part of the file path (i.e., the filename)
+        filename_with_extension = self.file.name.split("/")[-1]
+
+        # Split the filename from its extension and take only the filename
+        filename_without_extension = os.path.splitext(filename_with_extension)[0]
+
+        # Generate the slug
+        self.slug = slugify(f"{self.category.slug}-{filename_without_extension}")
+        
+        super().save(*args, **kwargs)
     def __str__(self):
         return str(self.title) or str(self.file)
 
