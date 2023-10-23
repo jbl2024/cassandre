@@ -88,7 +88,7 @@ class DocumentSearch:
             page = doc.metadata.get("page", "")
             source = doc.metadata.get("origin", "")
 
-            doc.page_content = f"{doc.page_content}\nsource: {source} - page {page} - score {score}\n"
+            doc.page_content = f"{doc.metadata.get('parent', doc.page_content)}\nsource: {source} - page {page} - score {score}\n"
             documents.append(doc)
         return documents
 

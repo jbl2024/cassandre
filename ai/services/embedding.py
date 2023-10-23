@@ -8,7 +8,8 @@ from langchain.embeddings.huggingface import (
     HuggingFaceBgeEmbeddings,
 )
 
-EMBEDDING = "intfloat/multilingual-e5-large"
+# EMBEDDING = "intfloat/multilingual-e5-large"
+EMBEDDING = "hkunlp/instructor-xl"
 
 
 def get_embedding():

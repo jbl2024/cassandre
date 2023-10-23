@@ -77,7 +77,8 @@ def load_and_split_pdf(temp_file, document):
         list: A list of split text documents.
     """
     loader = PDFPlumberLoader(temp_file.name)
-    loaded_documents = process_loaded_documents(loader.load(), document)
+    document_contents = loader.load()
+    loaded_documents = process_loaded_documents(document_contents, document)
 
     text_splitter = SpacyTextSplitter(
         pipeline="fr_core_news_lg",
@@ -85,6 +86,32 @@ def load_and_split_pdf(temp_file, document):
         chunk_overlap=settings.SPLIT_CHUNK_OVERLAP,
     )
     splitted_documents = text_splitter.split_documents(loaded_documents)
+
+    # for doc in splitted_documents:
+    #     page = doc.metadata.get('page', 1)
+    #     for loaded_doc in loaded_documents:
+    #         if loaded_doc.metadata.get('page', 1) == page:
+    #             doc.metadata['parent'] = loaded_doc.page_content
+    #             break
+
+
+    # for i in range(len(splitted_documents)):
+    #     current_content = splitted_documents[i].page_content
+
+    #     # Previous content
+    #     prev_content = splitted_documents[i - 1].page_content if i > 0 else ""
+
+    #     # Next content
+    #     next_content = (
+    #         splitted_documents[i + 1].page_content
+    #         if i < len(splitted_documents) - 1
+    #         else ""
+    #     )
+
+    #     combined_content = prev_content + current_content + next_content
+
+    #     # Set this as the parent metadata for the current document
+    #     splitted_documents[i].metadata["parent"] = combined_content
 
     hint_mappings = parse_hints(getattr(document, "hints", ""))
 
