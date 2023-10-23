@@ -28,7 +28,6 @@
         - "6379:6379"
     minio:
       image: minio/minio
-      container_name: minio
       ports:
         - "9000:9000"
         - "9001:9001"
