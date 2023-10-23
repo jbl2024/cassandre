@@ -39,6 +39,13 @@ La question est la suivante: {question}"""
 
         verbose_name_plural = "Categories"
 
+def get_upload_path(instance, filename):
+    """
+    Get the upload path for the document. 
+    This saves the document in a directory named after the associated category's slug.
+    """
+    return f'documents/{instance.category.slug}/{filename}'
+
 
 class Document(models.Model):
     """
@@ -46,7 +53,7 @@ class Document(models.Model):
     Each document has a file, a title, a creation date, and is associated with a category.
     """
 
-    file = models.FileField(upload_to="documents/", max_length=255)
+    file = models.FileField(upload_to=get_upload_path, max_length=255)
     title = models.CharField(max_length=255, blank=True, null=False)
     created_at = models.DateTimeField(default=timezone.now)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
