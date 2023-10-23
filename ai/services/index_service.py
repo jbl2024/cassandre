@@ -151,6 +151,7 @@ def process_loaded_documents(loaded_documents, document, full_clean=True):
     for doc in loaded_documents:
         doc.page_content = clean_text(doc.page_content, full_clean)
         doc.metadata["origin"] = document.title or os.path.basename(document.file.name)
+        doc.metadata["slug"] = document.slug
         # fix page number starting at 0
         # see https://github.com/langchain-ai/langchain/pull/10653
         doc.metadata["page"] = doc.metadata.get("page", 0) + 1
